@@ -1,4 +1,13 @@
-class CollectionViewFlowLayout extends CollectionViewLayout {
+package mocha.ui.collectionview;
+
+import mocha.foundation.OptionalInterface;
+import mocha.ui.collectionview.CollectionView;
+import mocha.ui.collectionview.CollectionViewLayout;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+public class CollectionViewFlowLayout extends CollectionViewLayout {
 	private mocha.graphics.Size _itemSize;
 	private CollectionViewFlowLayout.CollectionViewScrollDirection _scrollDirection;
 	private mocha.graphics.Size _headerReferenceSize;
@@ -22,10 +31,10 @@ class CollectionViewFlowLayout extends CollectionViewLayout {
 
 	public interface CollectionViewDelegateFlowLayout extends CollectionView.Delegate {
 
-		@Optional
+		@OptionalInterface.Optional
 		mocha.graphics.Size collectionViewLayoutSizeForItemAtIndexPath(CollectionView collectionView, CollectionViewLayout collectionViewLayout, mocha.foundation.IndexPath indexPath);
 
-		@Optional
+		@OptionalInterface.Optional
 		mocha.ui.EdgeInsets collectionViewLayoutInsetForSectionAtIndex(CollectionView collectionView, CollectionViewLayout collectionViewLayout, int section);
 
 		@Optional

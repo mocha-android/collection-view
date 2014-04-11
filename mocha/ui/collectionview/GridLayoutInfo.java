@@ -1,3 +1,10 @@
+package mocha.ui.collectionview;
+
+import mocha.foundation.MObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
 class GridLayoutInfo extends MObject {
 	private ArrayList _sections;
 	private HashMap _rowAlignmentOptions;

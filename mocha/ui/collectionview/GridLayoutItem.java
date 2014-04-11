@@ -1,3 +1,7 @@
+package mocha.ui.collectionview;
+
+import mocha.foundation.MObject;
+
 class GridLayoutItem extends MObject {
 	private GridLayoutSection _section;
 	private GridLayoutRow _rowObject;

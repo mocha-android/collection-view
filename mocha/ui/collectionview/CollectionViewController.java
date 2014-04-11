@@ -1,4 +1,8 @@
-class CollectionViewController extends mocha.ui.ViewController implements CollectionView.Delegate, CollectionView.DataSource {
+package mocha.ui.collectionview;
+
+import mocha.ui.View;
+
+public class CollectionViewController extends mocha.ui.ViewController implements CollectionView.Delegate, CollectionView.DataSource {
 	private CollectionView _collectionView;
 	private boolean _clearsSelectionOnViewWillAppear;
 	private CollectionViewLayout _layout;

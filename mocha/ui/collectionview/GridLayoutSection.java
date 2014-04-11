@@ -1,6 +1,16 @@
+package mocha.ui.collectionview;
+
+import mocha.foundation.Assert;
+import mocha.foundation.MObject;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+
 class GridLayoutSection extends MObject {
-	private ArrayList _items;
-	private ArrayList _rows;
+	private List<GridLayoutItem> _items;
+	private List<GridLayoutRow> _rows;
 	private boolean _fixedItemSize;
 	private mocha.graphics.Size _itemSize;
 	private int _itemsCount;
@@ -34,12 +44,12 @@ class GridLayoutSection extends MObject {
 
 	void invalidate() {
 		_isValid = false;
-		this.setRows(new ArrayList());
+		this.setRows(null);
 	}
 
 	void computeLayout() {
 		if (!_isValid) {
-		    mocha.foundation.Assert(this.getRows().size() == 0, "No rows shall be at this point.");
+		    Assert.condition(this.getRows().size() == 0, "No rows shall be at this point.");
 
 		    // iterate over all items, turning them into rows.
 		    mocha.graphics.Size sectionSize = mocha.graphics.Size.zero();
@@ -70,13 +80,13 @@ class GridLayoutSection extends MObject {
 		        GridLayoutItem item = null;
 		        if (!finishCycle) item = this.getFixedItemSize() ? null : this.getItems().get(itemIndex);
 
-		        mocha.graphics.Size itemSize = this.getFixedItemSize() ? this.getItemSize() : item.getItemFrame().getSize();
+		        mocha.graphics.Size itemSize = this.getFixedItemSize() ? this.getItemSize() : item.getItemFrame().size;
 		        float itemDimension = this.getLayoutInfo().getHorizontal() ? itemSize.height : itemSize.width;
 		        // first item of each row does not add spacing
 		        if (itemsByRowCount > 0) itemDimension += spacing;
 		        if (dimensionLeft < itemDimension || finishCycle) {
 		            // finish current row
-		            if (row) {
+		            if (row != null) {
 		                // compensate last row
 		                this.setItemsByRowCount(Math.max(itemsByRowCount, this.getItemsByRowCount()));
 		                row.setItemCount(itemsByRowCount);
@@ -87,13 +97,13 @@ class GridLayoutSection extends MObject {
 		                row.layoutRow();
 
 		                if (this.getLayoutInfo().getHorizontal()) {
-		                    row.setRowFrame(new mocha.graphics.Rect(sectionSize.width, this.getSectionMargins().top, row.getRowSize().getWidth(), row.getRowSize().getHeight()));
-		                    sectionSize.height = Math.max(row.getRowSize().getHeight(), sectionSize.height);
-		                    sectionSize.width += row.getRowSize().getWidth() + (finishCycle ? 0 : this.getHorizontalInterstice());
+		                    row.setRowFrame(new mocha.graphics.Rect(sectionSize.width, this.getSectionMargins().top, row.getRowSize().width, row.getRowSize().height));
+		                    sectionSize.height = Math.max(row.getRowSize().height, sectionSize.height);
+		                    sectionSize.width += row.getRowSize().width + (finishCycle ? 0 : this.getHorizontalInterstice());
 		                }else {
-		                    row.setRowFrame(new mocha.graphics.Rect(this.getSectionMargins().left, sectionSize.height, row.getRowSize().getWidth(), row.getRowSize().getHeight()));
-		                    sectionSize.height += row.getRowSize().getHeight() + (finishCycle ? 0 : this.getVerticalInterstice());
-		                    sectionSize.width = Math.max(row.getRowSize().getWidth(), sectionSize.width);
+		                    row.setRowFrame(new mocha.graphics.Rect(this.getSectionMargins().left, sectionSize.height, row.getRowSize().width, row.getRowSize().height));
+		                    sectionSize.height += row.getRowSize().height + (finishCycle ? 0 : this.getVerticalInterstice());
+		                    sectionSize.width = Math.max(row.getRowSize().width, sectionSize.width);
 		                }
 		            }
 		            // add new rows until the section is fully laid out
@@ -115,7 +125,7 @@ class GridLayoutSection extends MObject {
 		        }
 
 		        // add item on slow path
-		        if (item) row.addItem(item);
+		        if (item != null) row.addItem(item);
 
 		        itemIndex++;
 		        itemsByRowCount++;
@@ -139,21 +149,21 @@ class GridLayoutSection extends MObject {
 	GridLayoutItem addItem() {
 		GridLayoutItem item = new GridLayoutItem();
 		item.setSection(this);
-		_items.addObject(item);
+		_items.add(item);
 		return item;
 	}
 
 	GridLayoutRow addRow() {
 		GridLayoutRow row = new GridLayoutRow();
 		row.setSection(this);
-		_rows.addObject(row);
+		_rows.add(row);
 		return row;
 	}
 
 	GridLayoutSection snapshot() {
 		GridLayoutSection snapshotSection = new GridLayoutSection();
-		snapshotSection.setItems(this.getItems().copy());
-		snapshotSection.setRows(this.getItems().copy());
+		snapshotSection.setItems(this.getItems());
+		snapshotSection.setRows(this.getRows());
 		snapshotSection.setVerticalInterstice(this.getVerticalInterstice());
 		snapshotSection.setHorizontalInterstice(this.getHorizontalInterstice());
 		snapshotSection.setSectionMargins(this.getSectionMargins());
@@ -181,14 +191,12 @@ class GridLayoutSection extends MObject {
 	}
 
 	public GridLayoutSection() {
-		super.init();
-
-		_items = new ArrayList();
-		_rows = new ArrayList();
+		_items = new ArrayList<GridLayoutItem>();
+		_rows = new ArrayList<GridLayoutRow>();
 	}
 
-	String description() {
-		return String.format("<%s: %p itemCount:%ld frame:%s rows:%s>", StringFromClass(this.getClass()), this, (long)this.getItemsCount(), StringFromCGRect(this.getFrame()), this.getRows());
+	protected String toStringExtra() {
+		return String.format("itemCount:%d frame:%s rows:%s", this.getItemsCount(), this.getFrame(), this.getRows());
 	}
 
 	int itemsCount() {
@@ -198,20 +206,28 @@ class GridLayoutSection extends MObject {
 	/* Setters & Getters */
 	/* ========================================== */
 
-	public ArrayList getItems() {
+	public List<GridLayoutItem> getItems() {
 		return this._items;
 	}
 
-	public void setItems(ArrayList items) {
-		this._items = items;
+	public void setItems(List<GridLayoutItem> items) {
+		this._rows.clear();
+
+		if(items != null) {
+			this._items.addAll(items);
+		}
 	}
 
-	public ArrayList getRows() {
+	public List<GridLayoutRow> getRows() {
 		return this._rows;
 	}
 
-	public void setRows(ArrayList rows) {
-		this._rows = rows;
+	public void setRows(List<GridLayoutRow> rows) {
+		this._rows.clear();
+
+		if(rows != null) {
+			this._rows.addAll(rows);
+		}
 	}
 
 	public boolean getFixedItemSize() {

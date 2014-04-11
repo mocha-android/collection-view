@@ -1,3 +1,7 @@
+package mocha.ui.collectionview;
+
+import mocha.foundation.MObject;
+
 class CollectionViewUpdateItem extends MObject {
 	private mocha.foundation.IndexPath _initialIndexPath;
 	private mocha.foundation.IndexPath _finalIndexPath;

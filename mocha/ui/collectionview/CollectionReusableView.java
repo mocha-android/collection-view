@@ -1,4 +1,6 @@
-class CollectionReusableView extends mocha.ui.View {
+package mocha.ui.collectionview;
+
+public class CollectionReusableView extends mocha.ui.View {
 	private String _reuseIdentifier;
 	private CollectionView _collectionView;
 	private CollectionViewLayout.Attributes _layoutAttributes;

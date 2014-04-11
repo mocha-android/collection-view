@@ -1,4 +1,14 @@
-class CollectionView extends mocha.ui.ScrollView implements mocha.ui.ScrollView.Delegate {
+package mocha.ui.collectionview;
+
+import com.android.internal.util.Predicate;
+import mocha.foundation.MObject;
+import mocha.ui.View;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+
+public class CollectionView extends mocha.ui.ScrollView implements mocha.ui.ScrollView.Delegate {
 	private CollectionView.Delegate _delegate;
 	private CollectionView.DataSource _dataSource;
 	private mocha.ui.View _backgroundView;
@@ -632,7 +642,7 @@ class CollectionView extends mocha.ui.ScrollView implements mocha.ui.ScrollView.
 	}
 
 	ArrayList visibleCells() {
-		return _allVisibleViewsDict.allValues().filteredArrayUsingPredicate(mocha.foundation.Predicate.predicateWithBlock(^boolean(id evaluatedObject, HashMap *bindings) {
+		return _allVisibleViewsDict.allValues().filteredArrayUsingPredicate(Predicate.predicateWithBlock(^boolean(id evaluatedObject, HashMap *bindings) {
 		    return evaluatedObject.isKindOfClass(CollectionViewCell.getClass()) && mocha.graphics.RectIntersectsRect(this.getBounds(), evaluatedObject.frame());
 		}));
 	}
@@ -1015,7 +1025,7 @@ class CollectionView extends mocha.ui.ScrollView implements mocha.ui.ScrollView.
 	}
 
 	ArrayList allCells() {
-		return _allVisibleViewsDict.allValues().filteredArrayUsingPredicate(mocha.foundation.Predicate.predicateWithBlock(^boolean(id evaluatedObject, HashMap *bindings) {
+		return _allVisibleViewsDict.allValues().filteredArrayUsingPredicate(Predicate.predicateWithBlock(^boolean(id evaluatedObject, HashMap *bindings) {
 		    return evaluatedObject.isKindOfClass(CollectionViewCell.getClass());
 		}));
 	}
@@ -1804,7 +1814,7 @@ class CollectionView extends mocha.ui.ScrollView implements mocha.ui.ScrollView.
 		    // CATransaction's completionHandler but I simply don't know where to get that flag.
 		    CATransaction.setCompletionBlock(new Runnable { public void run() {
 		        // Iterate through all the views that we are going to remove.
-		        viewsToRemove.enumerateKeysAndObjectsUsingBlock(^(mocha.foundation.Number *keyObj, ArrayList *views, boolean *stop) {
+		        viewsToRemove.enumerateKeysAndObjectsUsingBlock(^(Number *keyObj, ArrayList *views, boolean *stop) {
 		            CollectionViewLayout.CollectionViewItemType type = keyObj.intIntegerValue();
 		            for (CollectionReusableView view  : views) {
 		                if (type == CollectionViewLayout.CollectionViewItemType.CELL) {
@@ -2012,7 +2022,7 @@ class CollectionView extends mocha.ui.ScrollView implements mocha.ui.ScrollView.
 		}
 
 		!defined  mocha.foundation._BLOCK_ASSERTIONS
-		for (mocha.foundation.Number sectionKey  : operations.keyEnumerator()) {
+		for (Number sectionKey  : operations.keyEnumerator()) {
 		    int section = sectionKey.intValue();
 
 		    int insertedCount = operations.get(sectionKey).get("inserted").intValue();

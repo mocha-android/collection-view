@@ -1,3 +1,7 @@
+package mocha.ui.collectionview;
+
+import mocha.foundation.MObject;
+
 class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<CollectionViewItemKey> {
 	private CollectionViewLayout.CollectionViewItemType _type;
 	private mocha.foundation.IndexPath _indexPath;

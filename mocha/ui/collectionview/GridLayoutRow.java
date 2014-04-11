@@ -1,3 +1,12 @@
+package mocha.ui.collectionview;
+
+import com.google.ads.x;
+import com.google.ads.y;
+import mocha.foundation.MObject;
+import mocha.ui.collectionview.CollectionViewFlowLayout;
+
+import java.util.ArrayList;
+
 class GridLayoutRow extends MObject {
 	private GridLayoutSection _section;
 	private ArrayList _items;
@@ -112,11 +121,11 @@ class GridLayoutRow extends MObject {
 		    // currently there is no public API supporting this behavior
 		    CGPoint itemOffset = CGPointZero;
 		    if (horizontalAlignment == PSTFlowLayoutHorizontalAlignmentRight) {
-		        itemOffset.x += leftOverSpace;
+		        x += leftOverSpace;
 		    }else if (horizontalAlignment == PSTFlowLayoutHorizontalAlignmentCentered ||
 		            (horizontalAlignment == PSTFlowLayoutHorizontalAlignmentJustify && usedItemCount == 1)) {
 		        // Special case one item row to split leftover space in half
-		        itemOffset.x += leftOverSpace / 2;
+		        x += leftOverSpace / 2;
 		    }
 
 		    // calculate the justified spacing among all items in a row if we are using
@@ -137,16 +146,16 @@ class GridLayoutRow extends MObject {
 		        // (since our default mode is justify) calculated from the total leftover
 		        // space divided by the number of intervals
 		        if (isHorizontal) {
-		            itemFrame.origin.y = itemOffset.y;
-		            itemOffset.y += itemFrame.size.height + self.section.verticalInterstice;
+		            itemFrame.origin.y = y;
+		            y += itemFrame.size.height + self.section.verticalInterstice;
 		            if (horizontalAlignment == PSTFlowLayoutHorizontalAlignmentJustify) {
-		                itemOffset.y += interSpacing;
+		                y += interSpacing;
 		            }
 		        }else {
-		            itemFrame.origin.x = itemOffset.x;
-		            itemOffset.x += itemFrame.size.width + self.section.horizontalInterstice;
+		            itemFrame.origin.x = x;
+		            x += itemFrame.size.width + self.section.horizontalInterstice;
 		            if (horizontalAlignment == PSTFlowLayoutHorizontalAlignmentJustify) {
-		                itemOffset.x += interSpacing;
+		                x += interSpacing;
 		            }
 		        }
 		        item.itemFrame = itemFrame; // might call nil; don't care

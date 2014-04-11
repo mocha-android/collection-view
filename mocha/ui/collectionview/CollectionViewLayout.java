@@ -1,4 +1,12 @@
-class CollectionViewLayout extends MObject implements Serializable {
+package mocha.ui.collectionview;
+
+import mocha.foundation.MObject;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+public class CollectionViewLayout extends MObject implements Serializable {
 	private CollectionView _collectionView;
 	private HashMap _decorationViewClassDict;
 	private HashMap _decorationViewNibDict;

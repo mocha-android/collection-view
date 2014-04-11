@@ -4,27 +4,31 @@ import mocha.foundation.MObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 class GridLayoutInfo extends MObject {
-	private ArrayList _sections;
-	private HashMap _rowAlignmentOptions;
-	private boolean _usesFloatingHeaderFooter;
-	private float _dimension;
-	private boolean _horizontal;
-	private boolean _leftToRight;
-	private mocha.graphics.Size _contentSize;
-	private mocha.graphics.Rect _visibleBounds;
-	private mocha.graphics.Size _layoutSize;
-	private boolean _isValid;
+	private List<GridLayoutSection> sections;
+	private HashMap rowAlignmentOptions;
+	private boolean usesFloatingHeaderFooter;
+	private float dimension;
+	private boolean horizontal;
+	private boolean leftToRight;
+	private mocha.graphics.Size contentSize;
+	private mocha.graphics.Rect visibleBounds;
+	private mocha.graphics.Size layoutSize;
+	private boolean isValid;
 
 	mocha.graphics.Rect frameForItemAtIndexPath(mocha.foundation.IndexPath indexPath) {
-		GridLayoutSection section = this.getSections().get(indexPath.section);
+		GridLayoutSection section = this.sections.get(indexPath.section);
+
 		mocha.graphics.Rect itemFrame;
+
 		if (section.getFixedItemSize()) {
-		    itemFrame = new mocha.graphics.Rect(mocha.graphics.Point.zero(), section.itemSize);
-		}else {
-		    itemFrame = section.getItems().get(indexPath.item).itemFrame();
+		    itemFrame = new mocha.graphics.Rect(mocha.graphics.Point.zero(), section.getItemSize());
+		} else {
+		    itemFrame = section.getItems().get(indexPath.item).getItemFrame();
 		}
+
 		return itemFrame.copy();
 	}
 
@@ -32,17 +36,17 @@ class GridLayoutInfo extends MObject {
 		GridLayoutSection section = new GridLayoutSection();
 		section.setRowAlignmentOptions(this.getRowAlignmentOptions());
 		section.setLayoutInfo(this);
-		_sections.addObject(section);
+		sections.add(section);
 		this.invalidate(false);
 		return section;
 	}
 
 	void invalidate(boolean arg) {
-		_isValid = false;
+		isValid = false;
 	}
 
-	GridLayoutInfo snapshot() {
-		GridLayoutInfo layoutInfo = this.getClass().new();
+	GridLayoutInfo snapshot() throws IllegalAccessException, InstantiationException {
+		GridLayoutInfo layoutInfo = this.getClass().newInstance();
 		layoutInfo.setSections(this.getSections());
 		layoutInfo.setRowAlignmentOptions(this.getRowAlignmentOptions());
 		layoutInfo.setUsesFloatingHeaderFooter(this.getUsesFloatingHeaderFooter());
@@ -54,79 +58,82 @@ class GridLayoutInfo extends MObject {
 	}
 
 	public GridLayoutInfo() {
-		super.init();
-
-		_sections = new ArrayList();
+		sections = new ArrayList<GridLayoutSection>();
 	}
 
-	String description() {
-		return String.format("<%s: %p dimension:%.1f horizontal:%d contentSize:%s sections:%s>", StringFromClass(this.getClass()), this, this.getDimension(), this.getHorizontal(), StringFromCGSize(this.getContentSize()), this.getSections());
+
+	protected String toStringExtra() {
+		return String.format("dimension:%.01f horizontal:%d contentSize:%s sections:%s", this.getDimension(), this.getHorizontal() ? 1 : 0, this.getContentSize(), this.getSections());
 	}
 
 	/* Setters & Getters */
 	/* ========================================== */
 
-	public ArrayList getSections() {
-		return this._sections;
+	public List<GridLayoutSection> getSections() {
+		return this.sections;
 	}
 
-	public void setSections(ArrayList sections) {
-		this._sections = sections;
+	public void setSections(List<GridLayoutSection> sections) {
+		this.sections.clear();
+
+		if(sections != null) {
+			this.sections.addAll(sections);
+		}
 	}
 
 	public HashMap getRowAlignmentOptions() {
-		return this._rowAlignmentOptions;
+		return this.rowAlignmentOptions;
 	}
 
 	public void setRowAlignmentOptions(HashMap rowAlignmentOptions) {
-		this._rowAlignmentOptions = rowAlignmentOptions;
+		this.rowAlignmentOptions = rowAlignmentOptions;
 	}
 
 	public boolean getUsesFloatingHeaderFooter() {
-		return this._usesFloatingHeaderFooter;
+		return this.usesFloatingHeaderFooter;
 	}
 
 	public void setUsesFloatingHeaderFooter(boolean usesFloatingHeaderFooter) {
-		this._usesFloatingHeaderFooter = usesFloatingHeaderFooter;
+		this.usesFloatingHeaderFooter = usesFloatingHeaderFooter;
 	}
 
 	public float getDimension() {
-		return this._dimension;
+		return this.dimension;
 	}
 
 	public void setDimension(float dimension) {
-		this._dimension = dimension;
+		this.dimension = dimension;
 	}
 
 	public boolean getHorizontal() {
-		return this._horizontal;
+		return this.horizontal;
 	}
 
 	public void setHorizontal(boolean horizontal) {
-		this._horizontal = horizontal;
+		this.horizontal = horizontal;
 	}
 
 	public boolean getLeftToRight() {
-		return this._leftToRight;
+		return this.leftToRight;
 	}
 
 	public void setLeftToRight(boolean leftToRight) {
-		this._leftToRight = leftToRight;
+		this.leftToRight = leftToRight;
 	}
 
 	public mocha.graphics.Size getContentSize() {
-		if(this._contentSize != null) {
-			return this._contentSize.copy();
+		if(this.contentSize != null) {
+			return this.contentSize.copy();
 		} else {
 			return mocha.graphics.Size.zero();
 		}
 	}
 
 	public void setContentSize(mocha.graphics.Size contentSize) {
-		if(this._contentSize != null) {
-			this._contentSize = contentSize.copy();
+		if(this.contentSize != null) {
+			this.contentSize = contentSize.copy();
 		} else {
-			this._contentSize = mocha.graphics.Size.zero();
+			this.contentSize = mocha.graphics.Size.zero();
 		}
 	}
 

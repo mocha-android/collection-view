@@ -3,46 +3,46 @@ package mocha.ui.collectionview;
 import mocha.foundation.MObject;
 
 class GridLayoutItem extends MObject {
-	private GridLayoutSection _section;
-	private GridLayoutRow _rowObject;
-	private mocha.graphics.Rect _itemFrame;
+	private GridLayoutSection section;
+	private GridLayoutRow rowObject;
+	private mocha.graphics.Rect itemFrame;
 
-	String description() {
-		return String.format("<%s: %p itemFrame:%s>", StringFromClass(this.getClass()), this, StringFromCGRect(this.getItemFrame()));
+	protected String toStringExtra() {
+		return String.format("itemFrame:%s", this.getItemFrame());
 	}
 
 	/* Setters & Getters */
 	/* ========================================== */
 
 	public GridLayoutSection getSection() {
-		return this._section;
+		return this.section;
 	}
 
 	public void setSection(GridLayoutSection section) {
-		this._section = section;
+		this.section = section;
 	}
 
 	public GridLayoutRow getRowObject() {
-		return this._rowObject;
+		return this.rowObject;
 	}
 
 	public void setRowObject(GridLayoutRow rowObject) {
-		this._rowObject = rowObject;
+		this.rowObject = rowObject;
 	}
 
 	public mocha.graphics.Rect getItemFrame() {
-		if(this._itemFrame != null) {
-			return this._itemFrame.copy();
+		if(this.itemFrame != null) {
+			return this.itemFrame.copy();
 		} else {
 			return mocha.graphics.Rect.zero();
 		}
 	}
 
 	public void setItemFrame(mocha.graphics.Rect itemFrame) {
-		if(this._itemFrame != null) {
-			this._itemFrame = itemFrame.copy();
+		if(this.itemFrame != null) {
+			this.itemFrame = itemFrame.copy();
 		} else {
-			this._itemFrame = mocha.graphics.Rect.zero();
+			this.itemFrame = mocha.graphics.Rect.zero();
 		}
 	}
 

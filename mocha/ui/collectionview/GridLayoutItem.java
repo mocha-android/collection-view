@@ -1,19 +1,46 @@
-//
-//  PSTGridLayoutItem.m
-//  PSPDFKit
-//
-//  Copyright (c) 2012-2013 Peter Steinberger. All rights reserved.
-//
+class GridLayoutItem extends MObject {
+	private GridLayoutSection _section;
+	private GridLayoutRow _rowObject;
+	private mocha.graphics.Rect _itemFrame;
 
-#import "PSTGridLayoutItem.h"
+	String description() {
+		return String.format("<%s: %p itemFrame:%s>", StringFromClass(this.getClass()), this, StringFromCGRect(this.getItemFrame()));
+	}
 
-@implementation PSTGridLayoutItem
+	/* Setters & Getters */
+	/* ========================================== */
 
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - NSObject
+	public GridLayoutSection getSection() {
+		return this.section;
+	}
 
-- (NSString *)description {
-    return [NSString stringWithFormat:@"<%@: %p itemFrame:%@>", NSStringFromClass(self.class), self, NSStringFromCGRect(self.itemFrame)];
+	public void setSection(GridLayoutSection section) {
+		this.section = section;
+	}
+
+	public GridLayoutRow getRowObject() {
+		return this.rowObject;
+	}
+
+	public void setRowObject(GridLayoutRow rowObject) {
+		this.rowObject = rowObject;
+	}
+
+	public mocha.graphics.Rect getItemFrame() {
+		if(this.itemFrame != null) {
+			return this.itemFrame.copy();
+		} else {
+			return mocha.graphics.Rect.zero();
+		}
+	}
+
+	public void setItemFrame(mocha.graphics.Rect itemFrame) {
+		if(this.itemFrame != null) {
+			this.itemFrame = itemFrame.copy();
+		} else {
+			this.itemFrame = mocha.graphics.Rect.zero();
+		}
+	}
+
 }
 
-@end

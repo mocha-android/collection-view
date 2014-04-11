@@ -1,145 +1,144 @@
-//
-//  PSTCollectionViewController.m
-//  PSPDFKit
-//
-//  Copyright (c) 2012-2013 Peter Steinberger. All rights reserved.
-//
+class CollectionViewController extends mocha.ui.ViewController implements CollectionView.Delegate, CollectionView.DataSource {
+	private CollectionView _collectionView;
+	private boolean _clearsSelectionOnViewWillAppear;
+	private CollectionViewLayout _layout;
+	private Character filler;
+	private CollectionViewControllerFlagsStruct _collectionViewControllerFlags = new CollectionViewControllerFlagsStruct();
 
-#import "PSTCollectionViewController.h"
-#import "PSTCollectionView.h"
+	private class CollectionViewControllerFlagsStruct {
+		boolean clearsSelectionOnViewWillAppear;
+		boolean appearsFirstTime;
 
-@interface PSTCollectionViewController () {
-    PSTCollectionViewLayout *_layout;
-    PSTCollectionView *_collectionView;
-    struct {
-        unsigned int clearsSelectionOnViewWillAppear : 1;
-        unsigned int appearsFirstTime : 1; // PST extension!
-    }_collectionViewControllerFlags;
-    char filler[100]; // [HACK] Our class needs to be larger than Apple's class for the superclass change to work.
+	}
+
+	public CollectionViewController(CollectionViewLayout layout) {
+		super.init();
+
+		this.setLayout(layout);
+		this.setClearsSelectionOnViewWillAppear(true);
+		_collectionViewControllerFlags.appearsFirstTime = true;
+	}
+
+	public CollectionViewController(mocha.foundation.Coder coder) {
+		super.initWithCoder(coder);
+
+		this.setLayout(new CollectionViewFlowLayout());
+		this.setClearsSelectionOnViewWillAppear(true);
+		_collectionViewControllerFlags.appearsFirstTime = true;
+	}
+
+	void loadView() {
+		super.loadView();
+
+		// if this is restored from IB, we don't have plain main view.
+		if (this.getView().isKindOfClass(CollectionView.getClass())) {
+		    _collectionView = (CollectionView)this.getView();
+		    this.setView(new mocha.ui.View(this.getView().getBounds()));
+		    this.getCollectionView().setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
+		}
+
+		if (_collectionView.getDelegate() == null) _collectionView.setDelegate(this);
+		if (_collectionView.getDataSource() == null) _collectionView.setDataSource(this);
+
+		// only create the collection view if it is not already created (by IB)
+		if (!_collectionView) {
+		    this.setCollectionView(new CollectionView(this.getView().getBounds(), this.getLayout()));
+		    this.getCollectionView().setDelegate(this);
+		    this.getCollectionView().setDataSource(this);
+		}
+	}
+
+	void viewDidLoad() {
+		super.viewDidLoad();
+
+		// This seems like a hack, but is needed for real compatibility
+		// There can be implementations of loadView that don't call super and don't set the view, yet it works in mocha.ui.CollectionViewController.
+		if (!this.getIsViewLoaded()) {
+		    this.setView(new mocha.ui.View(mocha.graphics.Rect.zero()));
+		}
+
+		// Attach the view
+		if (this.getView() != this.getCollectionView()) {
+		    this.getView().addSubview(this.getCollectionView());
+		    this.getCollectionView().setFrame(this.getView().getBounds());
+		    this.getCollectionView().setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
+		}
+	}
+
+	void viewWillAppear(boolean animated) {
+		super.viewWillAppear(animated);
+
+		if (_collectionViewControllerFlags.appearsFirstTime) {
+		    _collectionView.reloadData();
+		    _collectionViewControllerFlags.appearsFirstTime = false;
+		}
+
+		if (_collectionViewControllerFlags.clearsSelectionOnViewWillAppear) {
+		    for (mocha.foundation.IndexPath aIndexPath in _collectionView. : dexPathsForSelectedItems().copy()) {
+		        _collectionView.deselectItemAtIndexPathAnimated(aIndexPath, animated);
+		    }
+		}
+	}
+
+	CollectionView collectionView() {
+		if (!_collectionView) {
+		    _collectionView = new CollectionView(mocha.ui.Screen.getMainScreen().getBounds(), this.getLayout());
+		    _collectionView.setDelegate(this);
+		    _collectionView.setDataSource(this);
+
+		    // If the collection view isn't the main view, add it.
+		    if (this.getIsViewLoaded() && this.getView() != this.getCollectionView()) {
+		        this.getView().addSubview(this.getCollectionView());
+		        this.getCollectionView().setFrame(this.getView().getBounds());
+		        this.getCollectionView().setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
+		    }
+		}
+		return _collectionView;
+	}
+
+	void setClearsSelectionOnViewWillAppear(boolean clearsSelectionOnViewWillAppear) {
+		_collectionViewControllerFlags.clearsSelectionOnViewWillAppear = clearsSelectionOnViewWillAppear;
+	}
+
+	boolean clearsSelectionOnViewWillAppear() {
+		return _collectionViewControllerFlags.clearsSelectionOnViewWillAppear;
+	}
+
+	int collectionViewNumberOfItemsInSection(CollectionView collectionView, int section) {
+		return 0;
+	}
+
+	CollectionViewCell collectionViewCellForItemAtIndexPath(CollectionView collectionView, mocha.foundation.IndexPath indexPath) {
+		this.doesNotRecognizeSelector(_cmd);
+		return null;
+	}
+
+	/* Setters & Getters */
+	/* ========================================== */
+
+	public CollectionView getCollectionView() {
+		return this.collectionView;
+	}
+
+	public void setCollectionView(CollectionView collectionView) {
+		this.collectionView = collectionView;
+	}
+
+	public boolean getClearsSelectionOnViewWillAppear() {
+		return this.clearsSelectionOnViewWillAppear;
+	}
+
+	public void setClearsSelectionOnViewWillAppear(boolean clearsSelectionOnViewWillAppear) {
+		this.clearsSelectionOnViewWillAppear = clearsSelectionOnViewWillAppear;
+	}
+
+	private CollectionViewLayout getLayout() {
+		return this.layout;
+	}
+
+	private void setLayout(CollectionViewLayout layout) {
+		this.layout = layout;
+	}
+
 }
-@property (nonatomic, strong) PSTCollectionViewLayout *layout;
-@end
 
-@implementation PSTCollectionViewController
-
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - NSObject
-
-- (id)initWithCoder:(NSCoder *)coder {
-    self = [super initWithCoder:coder];
-    if (self) {
-        self.layout = [PSTCollectionViewFlowLayout new];
-        self.clearsSelectionOnViewWillAppear = YES;
-        _collectionViewControllerFlags.appearsFirstTime = YES;
-    }
-    return self;
-}
-
-- (id)initWithCollectionViewLayout:(PSTCollectionViewLayout *)layout {
-    if ((self = [super init])) {
-        self.layout = layout;
-        self.clearsSelectionOnViewWillAppear = YES;
-        _collectionViewControllerFlags.appearsFirstTime = YES;
-    }
-    return self;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - UIViewController
-
-- (void)loadView {
-    [super loadView];
-
-    // if this is restored from IB, we don't have plain main view.
-    if ([self.view isKindOfClass:PSTCollectionView.class]) {
-        _collectionView = (PSTCollectionView *)self.view;
-        self.view = [[UIView alloc] initWithFrame:self.view.bounds];
-        self.collectionView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
-    }
-
-    if (_collectionView.delegate == nil) _collectionView.delegate = self;
-    if (_collectionView.dataSource == nil) _collectionView.dataSource = self;
-
-    // only create the collection view if it is not already created (by IB)
-    if (!_collectionView) {
-        self.collectionView = [[PSTCollectionView alloc] initWithFrame:self.view.bounds collectionViewLayout:self.layout];
-        self.collectionView.delegate = self;
-        self.collectionView.dataSource = self;
-    }
-}
-
-- (void)viewDidLoad {
-    [super viewDidLoad];
-
-    // This seems like a hack, but is needed for real compatibility
-    // There can be implementations of loadView that don't call super and don't set the view, yet it works in UICollectionViewController.
-    if (!self.isViewLoaded) {
-        self.view = [[UIView alloc] initWithFrame:CGRectZero];
-    }
-
-    // Attach the view
-    if (self.view != self.collectionView) {
-        [self.view addSubview:self.collectionView];
-        self.collectionView.frame = self.view.bounds;
-        self.collectionView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
-    }
-}
-
-- (void)viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-
-    if (_collectionViewControllerFlags.appearsFirstTime) {
-        [_collectionView reloadData];
-        _collectionViewControllerFlags.appearsFirstTime = NO;
-    }
-
-    if (_collectionViewControllerFlags.clearsSelectionOnViewWillAppear) {
-        for (NSIndexPath *aIndexPath in [[_collectionView indexPathsForSelectedItems] copy]) {
-            [_collectionView deselectItemAtIndexPath:aIndexPath animated:animated];
-        }
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - Lazy load the collection view
-
-- (PSTCollectionView *)collectionView {
-    if (!_collectionView) {
-        _collectionView = [[PSTCollectionView alloc] initWithFrame:UIScreen.mainScreen.bounds collectionViewLayout:self.layout];
-        _collectionView.delegate = self;
-        _collectionView.dataSource = self;
-
-        // If the collection view isn't the main view, add it.
-        if (self.isViewLoaded && self.view != self.collectionView) {
-            [self.view addSubview:self.collectionView];
-            self.collectionView.frame = self.view.bounds;
-            self.collectionView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
-        }
-    }
-    return _collectionView;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - Properties
-
-- (void)setClearsSelectionOnViewWillAppear:(BOOL)clearsSelectionOnViewWillAppear {
-    _collectionViewControllerFlags.clearsSelectionOnViewWillAppear = clearsSelectionOnViewWillAppear;
-}
-
-- (BOOL)clearsSelectionOnViewWillAppear {
-    return _collectionViewControllerFlags.clearsSelectionOnViewWillAppear;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - PSTCollectionViewDataSource
-
-- (NSInteger)collectionView:(PSTCollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
-    return 0;
-}
-
-- (PSTCollectionViewCell *)collectionView:(PSTCollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
-    [self doesNotRecognizeSelector:_cmd];
-    return nil;
-}
-
-@end

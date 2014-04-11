@@ -1,77 +1,79 @@
-//
-//  PSTCollectionViewItemKey.m
-//  PSPDFKit
-//
-//  Copyright (c) 2012-2013 Peter Steinberger. All rights reserved.
-//
+class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<CollectionViewItemKey> {
+	private CollectionViewLayout.CollectionViewItemType _type;
+	private mocha.foundation.IndexPath _indexPath;
+	private String _identifier;
 
-#import "PSTCollectionViewItemKey.h"
+	static Object collectionItemKeyForLayoutAttributes(CollectionViewLayout.Attributes layoutAttributes) {
+		CollectionViewItemKey key = this.getClass().new();
+		key.setIndexPath(layoutAttributes.getIndexPath());
+		CollectionViewLayout.CollectionViewItemType const itemType = layoutAttributes.getRepresentedElementCategory();
+		key.setType(itemType);
+		key.setIdentifier(layoutAttributes.getRepresentedElementKind());
+		return key;
+	}
 
-NSString *const PSTCollectionElementKindCell = @"UICollectionElementKindCell";
+	static Object collectionItemKeyForCellWithIndexPath(mocha.foundation.IndexPath indexPath) {
+		CollectionViewItemKey key = this.getClass().new();
+		key.setIndexPath(indexPath);
+		key.setType(CollectionViewLayout.CollectionViewItemType.CELL);
+		key.setIdentifier(PSTCollectionElementKindCell);
+		return key;
+	}
 
-@implementation PSTCollectionViewItemKey
+	String description() {
+		return String.format("<%s: %p Type = %s Identifier=%s IndexPath = %s>", StringFromClass(this.getClass()),
+		                                  this, CollectionViewLayout.CollectionViewItemTypeToString(this.getType()), _identifier, this.getIndexPath());
+	}
 
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - Static
+	int hash() {
+		return ((_indexPath.hash() + _type) * 31) + _identifier.hash();
+	}
 
-+ (id)collectionItemKeyForCellWithIndexPath:(NSIndexPath *)indexPath {
-    PSTCollectionViewItemKey *key = [self.class new];
-    key.indexPath = indexPath;
-    key.type = PSTCollectionViewItemTypeCell;
-    key.identifier = PSTCollectionElementKindCell;
-    return key;
+	boolean isEqual(Object other) {
+		if (other.isKindOfClass(this.getClass())) {
+		    CollectionViewItemKey otherKeyItem = (CollectionViewItemKey)other;
+		    // identifier might be null?
+		    if (_type == otherKeyItem.getType() && _indexPath.isEqual(otherKeyItem.getIndexPath()) && (_identifier.isEqualToString(otherKeyItem.getIdentifier()) || _identifier == otherKeyItem.getIdentifier())) {
+		        return true;
+		    }
+		}
+		return false;
+	}
+
+	Object copyWithZone(mocha.foundation.Zone zone) {
+		CollectionViewItemKey itemKey = this.getClass().new();
+		itemKey.setIndexPath(this.getIndexPath());
+		itemKey.setType(this.getType());
+		itemKey.setIdentifier(this.getIdentifier());
+		return itemKey;
+	}
+
+	/* Setters & Getters */
+	/* ========================================== */
+
+	public CollectionViewLayout.CollectionViewItemType getType() {
+		return this.type;
+	}
+
+	public void setType(CollectionViewLayout.CollectionViewItemType type) {
+		this.type = type;
+	}
+
+	public mocha.foundation.IndexPath getIndexPath() {
+		return this.indexPath;
+	}
+
+	public void setIndexPath(mocha.foundation.IndexPath indexPath) {
+		this.indexPath = indexPath;
+	}
+
+	public String getIdentifier() {
+		return this.identifier;
+	}
+
+	public void setIdentifier(String identifier) {
+		this.identifier = identifier;
+	}
+
 }
 
-+ (id)collectionItemKeyForLayoutAttributes:(PSTCollectionViewLayoutAttributes *)layoutAttributes {
-    PSTCollectionViewItemKey *key = [self.class new];
-    key.indexPath = layoutAttributes.indexPath;
-    PSTCollectionViewItemType const itemType = layoutAttributes.representedElementCategory;
-    key.type = itemType;
-    key.identifier = layoutAttributes.representedElementKind;
-    return key;
-}
-
-NSString *PSTCollectionViewItemTypeToString(PSTCollectionViewItemType type) {
-    switch (type) {
-        case PSTCollectionViewItemTypeCell: return @"Cell";
-        case PSTCollectionViewItemTypeDecorationView: return @"Decoration";
-        case PSTCollectionViewItemTypeSupplementaryView: return @"Supplementary";
-        default: return @"<INVALID>";
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - NSObject
-
-- (NSString *)description {
-    return [NSString stringWithFormat:@"<%@: %p Type = %@ Identifier=%@ IndexPath = %@>", NSStringFromClass(self.class),
-                                      self, PSTCollectionViewItemTypeToString(self.type), _identifier, self.indexPath];
-}
-
-- (NSUInteger)hash {
-    return (([_indexPath hash] + _type) * 31) + [_identifier hash];
-}
-
-- (BOOL)isEqual:(id)other {
-    if ([other isKindOfClass:self.class]) {
-        PSTCollectionViewItemKey *otherKeyItem = (PSTCollectionViewItemKey *)other;
-        // identifier might be nil?
-        if (_type == otherKeyItem.type && [_indexPath isEqual:otherKeyItem.indexPath] && ([_identifier isEqualToString:otherKeyItem.identifier] || _identifier == otherKeyItem.identifier)) {
-            return YES;
-        }
-    }
-    return NO;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - NSCopying
-
-- (id)copyWithZone:(NSZone *)zone {
-    PSTCollectionViewItemKey *itemKey = [self.class new];
-    itemKey.indexPath = self.indexPath;
-    itemKey.type = self.type;
-    itemKey.identifier = self.identifier;
-    return itemKey;
-}
-
-@end

@@ -1,117 +1,113 @@
-//
-//  PSTCollectionViewUpdateItem.m
-//  PSPDFKit
-//
-//  Copyright (c) 2012-2013 Peter Steinberger. All rights reserved.
-//  Contributed by Sergey Gavrilyuk.
-//
+class CollectionViewUpdateItem extends MObject {
+	private mocha.foundation.IndexPath _initialIndexPath;
+	private mocha.foundation.IndexPath _finalIndexPath;
+	private Object _gap;
+	private CollectionViewUpdateItem.CollectionUpdateAction _updateAction;
 
-#import "PSTCollectionViewUpdateItem.h"
-#import "NSIndexPath+PSTCollectionViewAdditions.h"
+	public enum CollectionUpdateAction {
+		INSERT,
+		DELETE,
+		RELOAD,
+		MOVE,
+		NONE
+	}
 
-@interface PSTCollectionViewUpdateItem () {
-    NSIndexPath *_initialIndexPath;
-    NSIndexPath *_finalIndexPath;
-    PSTCollectionUpdateAction _updateAction;
-    id _gap;
-}
-@end
+	public CollectionViewUpdateItem(mocha.foundation.IndexPath initialIndexPath, mocha.foundation.IndexPath finalIndexPath, CollectionViewUpdateItem.CollectionUpdateAction updateAction) {
+		super.init();
 
-@implementation PSTCollectionViewUpdateItem
+		_initialIndexPath = initialIndexPath;
+		_finalIndexPath = finalIndexPath;
+		_updateAction = updateAction;
+	}
 
-@synthesize updateAction = _updateAction;
-@synthesize indexPathBeforeUpdate = _initialIndexPath;
-@synthesize indexPathAfterUpdate = _finalIndexPath;
+	public CollectionViewUpdateItem(CollectionViewUpdateItem.CollectionUpdateAction updateAction, mocha.foundation.IndexPath indexPath) {
+		if (updateAction == CollectionViewUpdateItem.CollectionUpdateAction.INSERT)
+		    return this.initWithInitialIndexPathFinalIndexPathUpdateAction(null, indexPath, updateAction);
+		else if (updateAction == CollectionViewUpdateItem.CollectionUpdateAction.DELETE)
+		    return this.initWithInitialIndexPathFinalIndexPathUpdateAction(indexPath, null, updateAction);
+		else if (updateAction == CollectionViewUpdateItem.CollectionUpdateAction.RELOAD)
+		    return this.initWithInitialIndexPathFinalIndexPathUpdateAction(indexPath, indexPath, updateAction);
 
-- (id)initWithInitialIndexPath:(NSIndexPath *)initialIndexPath finalIndexPath:(NSIndexPath *)finalIndexPath updateAction:(PSTCollectionUpdateAction)updateAction {
-    if ((self = [super init])) {
-        _initialIndexPath = initialIndexPath;
-        _finalIndexPath = finalIndexPath;
-        _updateAction = updateAction;
-    }
-    return self;
-}
+		return null;
+	}
 
-- (id)initWithAction:(PSTCollectionUpdateAction)updateAction forIndexPath:(NSIndexPath *)indexPath {
-    if (updateAction == PSTCollectionUpdateActionInsert)
-        return [self initWithInitialIndexPath:nil finalIndexPath:indexPath updateAction:updateAction];
-    else if (updateAction == PSTCollectionUpdateActionDelete)
-        return [self initWithInitialIndexPath:indexPath finalIndexPath:nil updateAction:updateAction];
-    else if (updateAction == PSTCollectionUpdateActionReload)
-        return [self initWithInitialIndexPath:indexPath finalIndexPath:indexPath updateAction:updateAction];
+	public CollectionViewUpdateItem(mocha.foundation.IndexPath oldIndexPath, mocha.foundation.IndexPath newIndexPath) {
+		return this.initWithInitialIndexPathFinalIndexPathUpdateAction(oldIndexPath, newIndexPath, CollectionViewUpdateItem.CollectionUpdateAction.MOVE);
+	}
 
-    return nil;
-}
+	CollectionViewUpdateItem.CollectionUpdateAction updateAction() {
 
-- (id)initWithOldIndexPath:(NSIndexPath *)oldIndexPath newIndexPath:(NSIndexPath *)newIndexPath {
-    return [self initWithInitialIndexPath:oldIndexPath finalIndexPath:newIndexPath updateAction:PSTCollectionUpdateActionMove];
-}
+	}
 
-- (NSString *)description {
-    NSString *action = nil;
-    switch (_updateAction) {
-        case PSTCollectionUpdateActionInsert: action = @"insert"; break;
-        case PSTCollectionUpdateActionDelete: action = @"delete"; break;
-        case PSTCollectionUpdateActionMove:   action = @"move";   break;
-        case PSTCollectionUpdateActionReload: action = @"reload"; break;
-        default: break;
-    }
+	mocha.foundation.ComparisonResult compareIndexPaths(CollectionViewUpdateItem otherItem) {
+		mocha.foundation.ComparisonResult result = mocha.foundation.OrderedSame;
+		mocha.foundation.IndexPath thisIndexPath = null;
+		mocha.foundation.IndexPath otherIndexPath = null;
 
-    return [NSString stringWithFormat:@"Index path before update (%@) index path after update (%@) action (%@).",  _initialIndexPath, _finalIndexPath, action];
-}
+		switch (_updateAction) {
+		    case CollectionViewUpdateItem.CollectionUpdateAction.INSERT:
+		        thisIndexPath = _finalIndexPath;
+		        otherIndexPath = otherItem.newIndexPath();
+		        break;
+		    case CollectionViewUpdateItem.CollectionUpdateAction.DELETE:
+		        thisIndexPath = _initialIndexPath;
+		        otherIndexPath = otherItem.indexPath();
+		    default: break;
+		}
 
-- (void)setNewIndexPath:(NSIndexPath *)indexPath {
-    _finalIndexPath = indexPath;
-}
+		if (this.getIsSectionOperation()) result = thisIndexPath.section.compare(otherIndexPath.section);
+		else result = thisIndexPath.compare(otherIndexPath);
+		return result;
+	}
 
-- (void)setGap:(id)gap {
-    _gap = gap;
-}
+	mocha.foundation.ComparisonResult inverseCompareIndexPaths(CollectionViewUpdateItem otherItem) {
+		return (mocha.foundation.ComparisonResult)(this.compareIndexPaths(otherItem) * -1);
+	}
 
-- (BOOL)isSectionOperation {
-    return (_initialIndexPath.item == NSNotFound || _finalIndexPath.item == NSNotFound);
-}
+	Object indexPath() {
+		//TODO: check this
+		return _initialIndexPath;
+	}
 
-- (NSIndexPath *)newIndexPath {
-    return _finalIndexPath;
-}
+	boolean isSectionOperation() {
+		return (_initialIndexPath.item == mocha.foundation.NotFound || _finalIndexPath.item == mocha.foundation.NotFound);
+	}
 
-- (id)gap {
-    return _gap;
-}
+	String description() {
+		String action = null;
+		switch (_updateAction) {
+		    case CollectionViewUpdateItem.CollectionUpdateAction.INSERT: action = "insert"; break;
+		    case CollectionViewUpdateItem.CollectionUpdateAction.DELETE: action = "delete"; break;
+		    case CollectionViewUpdateItem.CollectionUpdateAction.MOVE:   action = "move";   break;
+		    case CollectionViewUpdateItem.CollectionUpdateAction.RELOAD: action = "reload"; break;
+		    default: break;
+		}
 
-- (PSTCollectionUpdateAction)action {
-    return _updateAction;
-}
+		return String.format("Index path before update (%s) index path after update (%s) action (%s).",  _initialIndexPath, _finalIndexPath, action);
+	}
 
-- (id)indexPath {
-    //TODO: check this
-    return _initialIndexPath;
-}
+	void setNewIndexPath(mocha.foundation.IndexPath indexPath) {
+		_finalIndexPath = indexPath;
+	}
 
-- (NSComparisonResult)compareIndexPaths:(PSTCollectionViewUpdateItem *)otherItem {
-    NSComparisonResult result = NSOrderedSame;
-    NSIndexPath *selfIndexPath = nil;
-    NSIndexPath *otherIndexPath = nil;
+	void setGap(Object gap) {
+		_gap = gap;
+	}
 
-    switch (_updateAction) {
-        case PSTCollectionUpdateActionInsert:
-            selfIndexPath = _finalIndexPath;
-            otherIndexPath = [otherItem newIndexPath];
-            break;
-        case PSTCollectionUpdateActionDelete:
-            selfIndexPath = _initialIndexPath;
-            otherIndexPath = [otherItem indexPath];
-        default: break;
-    }
+	mocha.foundation.IndexPath newIndexPath() {
+		return _finalIndexPath;
+	}
 
-    if (self.isSectionOperation) result = [@(selfIndexPath.section) compare:@(otherIndexPath.section)];
-    else result = [selfIndexPath compare:otherIndexPath];
-    return result;
-}
+	Object gap() {
+		return _gap;
+	}
 
-- (NSComparisonResult)inverseCompareIndexPaths:(PSTCollectionViewUpdateItem *)otherItem {
-    return (NSComparisonResult)([self compareIndexPaths:otherItem] * -1);
+	CollectionViewUpdateItem.CollectionUpdateAction action() {
+		return _updateAction;
+	}
+
+	/* Setters & Getters */
+	/* ========================================== */
+
 }
 
-@end

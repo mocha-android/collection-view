@@ -1,264 +1,209 @@
-//
-//  PSTCollectionViewCell.m
-//  PSPDFKit
-//
-//  Copyright (c) 2012-2013 Peter Steinberger. All rights reserved.
-//
+class CollectionViewCell extends CollectionReusableView {
+	private mocha.ui.View _contentView;
+	private boolean _selected;
+	private boolean _highlighted;
+	private mocha.ui.View _backgroundView;
+	private mocha.ui.View _selectedBackgroundView;
+	private mocha.ui.LongPressGestureRecognizer _menuGesture;
+	private Object _selectionSegueTemplate;
+	private Object _highlightingSupport;
+	private CollectionCellFlagsStruct _collectionCellFlags = new CollectionCellFlagsStruct();
 
-#import "PSTCollectionView.h"
+	private class CollectionCellFlagsStruct {
+		boolean selected;
+		boolean highlighted;
+		boolean showingMenu;
+		boolean clearSelectionWhenMenuDisappears;
+		boolean waitingForSelectionAnimationHalfwayPoint;
 
-@interface PSTCollectionReusableView () {
-    PSTCollectionViewLayoutAttributes *_layoutAttributes;
-    NSString *_reuseIdentifier;
-    __unsafe_unretained PSTCollectionView *_collectionView;
-    struct {
-        unsigned int inUpdateAnimation : 1;
-    }_reusableViewFlags;
-    char filler[50]; // [HACK] Our class needs to be larger than Apple's class for the superclass change to work.
-}
-@property (nonatomic, copy) NSString *reuseIdentifier;
-@property (nonatomic, unsafe_unretained) PSTCollectionView *collectionView;
-@property (nonatomic, strong) PSTCollectionViewLayoutAttributes *layoutAttributes;
-@end
+	}
 
-@implementation PSTCollectionReusableView
+	void performSelectionSegue() {
+		/*
+		    Currently there's no "official" way to trigger a storyboard segue
+		    using UIStoryboardSegueTemplate, so we're doing it in a semi-legal way.
+		 */
+		SEL selector = mocha.foundation.SelectorFromString(String.format("per%s", "form:"));
+		if (this->_selectionSegueTemplate.respondsToSelector(selector)) {
+		    this->_selectionSegueTemplate.performSelectorWithObject(selector, this);
+		}
+	}
 
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - NSObject
+	public CollectionViewCell(mocha.graphics.Rect frame) {
+		super.initWithFrame(frame);
 
-- (id)initWithFrame:(CGRect)frame {
-    if ((self = [super initWithFrame:frame])) {
-    }
-    return self;
-}
+		_backgroundView = new mocha.ui.View(this.getBounds());
+		_backgroundView.setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
+		this.addSubview(_backgroundView);
+					
+		_contentView = new mocha.ui.View(this.getBounds());
+		_contentView.setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
+		this.addSubview(_contentView);
+					
+		_menuGesture = new mocha.ui.LongPressGestureRecognizer(this, "menuGesture");
+	}
 
-- (id)initWithCoder:(NSCoder *)aDecoder {
-    if ((self = [super initWithCoder:aDecoder])) {
-        self.reuseIdentifier = [aDecoder decodeObjectForKey:@"UIReuseIdentifier"];
-    }
-    return self;
-}
+	public CollectionViewCell(mocha.foundation.Coder aDecoder) {
+		super.initWithCoder(aDecoder);
 
-- (void)awakeFromNib {
-    self.reuseIdentifier = [self valueForKeyPath:@"reuseIdentifier"];
-}
+		if (this.getSubviews().size() > 0) {
+		    _contentView = this.getSubviews().get(0);
+		}else {
+		    _contentView = new mocha.ui.View(this.getBounds());
+		    _contentView.setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
+		    this.addSubview(_contentView);
+		}
+					
+		_backgroundView = new mocha.ui.View(this.getBounds());
+		_backgroundView.setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
+		this.insertSubviewBelowSubview(_backgroundView, _contentView);
+					
+		_menuGesture = new mocha.ui.LongPressGestureRecognizer(this, "menuGesture");
+	}
 
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - Public
+	void prepareForReuse() {
+		this.setLayoutAttributes(null);
+		this.setSelected(false);
+		this.setHighlighted(false);
+		this.setAccessibilityTraits(mocha.ui.AccessibilityTraitNone);
+	}
 
-- (void)prepareForReuse {
-    self.layoutAttributes = nil;
-}
+	void setSelected(boolean selected) {
+		_collectionCellFlags.selected = selected;
+		this.setAccessibilityTraits(selected ? mocha.ui.AccessibilityTraitSelected : mocha.ui.AccessibilityTraitNone);
+		this.updateBackgroundView(selected);
+	}
 
-- (void)applyLayoutAttributes:(PSTCollectionViewLayoutAttributes *)layoutAttributes {
-    if (layoutAttributes != _layoutAttributes) {
-        _layoutAttributes = layoutAttributes;
+	@mocha.foundation.RuntimeMethod
+	public void setHighlighted(boolean highlighted) {
+		_collectionCellFlags.highlighted = highlighted;
+		this.updateBackgroundView(highlighted);
+	}
 
-        self.bounds = (CGRect){.origin = self.bounds.origin, .size = layoutAttributes.size};
-        self.center = layoutAttributes.center;
-        self.hidden = layoutAttributes.hidden;
-        self.layer.transform = layoutAttributes.transform3D;
-        self.layer.zPosition = layoutAttributes.zIndex;
-        self.layer.opacity = layoutAttributes.alpha;
-    }
-}
+	void updateBackgroundView(boolean highlight) {
+		_selectedBackgroundView.setAlpha(highlight ? 1.0f : 0.0f);
+		this.setHighlightedForViews(highlight, this.getContentView().getSubviews());
+	}
 
-- (void)willTransitionFromLayout:(PSTCollectionViewLayout *)oldLayout toLayout:(PSTCollectionViewLayout *)newLayout {
-    _reusableViewFlags.inUpdateAnimation = YES;
-}
+	void setHighlightedForViews(boolean highlighted, Object subviews) {
+		for (id view in subviews) {
+		    // Ignore the events if view wants to
+		    if (!((mocha.ui.View)view).getIsUserInteractionEnabled() &&
+		            view.respondsToSelector("setHighlighted") &&
+		            !view.isK : dOfClass(mocha.ui.Control.getClass())) {
+		        view.setHighlighted(highlighted);
 
-- (void)didTransitionFromLayout:(PSTCollectionViewLayout *)oldLayout toLayout:(PSTCollectionViewLayout *)newLayout {
-    _reusableViewFlags.inUpdateAnimation = NO;
-}
+		        this.setHighlightedForViews(highlighted, view.subviews());
+		    }
+		}
+	}
 
-- (BOOL)isInUpdateAnimation {
-    return _reusableViewFlags.inUpdateAnimation;
-}
+	@mocha.foundation.RuntimeMethod
+	public void menuGesture(mocha.ui.LongPressGestureRecognizer recognizer) {
+		MLog("Not yet implemented: %s", StringFromSelector(_cmd));
+	}
 
-- (void)setInUpdateAnimation:(BOOL)inUpdateAnimation {
-    _reusableViewFlags.inUpdateAnimation = inUpdateAnimation;
-}
+	void setBackgroundView(mocha.ui.View backgroundView) {
+		if (_backgroundView != backgroundView) {
+		    _backgroundView.removeFromSuperview();
+		    _backgroundView = backgroundView;
+		    _backgroundView.setFrame(this.getBounds());
+		    _backgroundView.setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
+		    this.insertSubviewAtIndex(_backgroundView, 0);
+		}
+	}
 
-@end
+	void setSelectedBackgroundView(mocha.ui.View selectedBackgroundView) {
+		if (_selectedBackgroundView != selectedBackgroundView) {
+		    _selectedBackgroundView.removeFromSuperview();
+		    _selectedBackgroundView = selectedBackgroundView;
+		    _selectedBackgroundView.setFrame(this.getBounds());
+		    _selectedBackgroundView.setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
+		    _selectedBackgroundView.setAlpha(this.getSelected() ? 1.0f : 0.0f);
+		    if (_backgroundView) {
+		        this.insertSubviewAboveSubview(_selectedBackgroundView, _backgroundView);
+		    }
+		    else {
+		        this.insertSubviewAtIndex(_selectedBackgroundView, 0);
+		    }
+		}
+	}
 
+	boolean isSelected() {
+		return _collectionCellFlags.selected;
+	}
 
-@implementation PSTCollectionViewCell {
-    UIView *_contentView;
-    UIView *_backgroundView;
-    UIView *_selectedBackgroundView;
-    UILongPressGestureRecognizer *_menuGesture;
-    id _selectionSegueTemplate;
-    id _highlightingSupport;
-    struct {
-        unsigned int selected : 1;
-        unsigned int highlighted : 1;
-        unsigned int showingMenu : 1;
-        unsigned int clearSelectionWhenMenuDisappears : 1;
-        unsigned int waitingForSelectionAnimationHalfwayPoint : 1;
-    }_collectionCellFlags;
-    BOOL _selected;
-    BOOL _highlighted;
-}
+	boolean isHighlighted() {
+		return _collectionCellFlags.highlighted;
+	}
 
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - NSObject
+	mocha.foundation.MethodSignature methodSignatureForSelector(SEL selector) {
+		mocha.foundation.MethodSignature sig = super.methodSignatureForSelector(selector);
+		if(!sig) {
+		    String selString = StringFromSelector(selector);
+		    if (selString.hasPrefix("_")) {
+		        SEL cleanedSelector = mocha.foundation.SelectorFromString(selString.substringFromIndex(1));
+		        sig = super.methodSignatureForSelector(cleanedSelector);
+		    }
+		}
+		return sig;
+	}
 
-- (id)initWithFrame:(CGRect)frame {
-    if ((self = [super initWithFrame:frame])) {
-        _backgroundView = [[UIView alloc] initWithFrame:self.bounds];
-        _backgroundView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
-        [self addSubview:_backgroundView];
+	void forwardInvocation(mocha.foundation.Invocation inv) {
+		String selString = StringFromSelector(inv.selector());
+		if (selString.hasPrefix("_")) {
+		    SEL cleanedSelector = mocha.foundation.SelectorFromString(selString.substringFromIndex(1));
+		    if (this.respondsToSelector(cleanedSelector)) {
+		        inv.setSelector(cleanedSelector);
+		        inv.invokeWithTarget(this);
+		    }
+		}else {
+		    super.forwardInvocation(inv);
+		}
+	}
 
-        _contentView = [[UIView alloc] initWithFrame:self.bounds];
-        _contentView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
-        [self addSubview:_contentView];
+	/* Setters & Getters */
+	/* ========================================== */
 
-        _menuGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(menuGesture:)];
-    }
-    return self;
-}
+	public mocha.ui.View getContentView() {
+		return this.contentView;
+	}
 
-- (id)initWithCoder:(NSCoder *)aDecoder {
-    if ((self = [super initWithCoder:aDecoder])) {
-        if (self.subviews.count > 0) {
-            _contentView = self.subviews[0];
-        }else {
-            _contentView = [[UIView alloc] initWithFrame:self.bounds];
-            _contentView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
-            [self addSubview:_contentView];
-        }
+	public void setContentView(mocha.ui.View contentView) {
+		this.contentView = contentView;
+	}
 
-        _backgroundView = [[UIView alloc] initWithFrame:self.bounds];
-        _backgroundView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
-        [self insertSubview:_backgroundView belowSubview:_contentView];
+	public boolean getSelected() {
+		return this.selected;
+	}
 
-        _menuGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(menuGesture:)];
-    }
-    return self;
-}
+	public void setSelected(boolean selected) {
+		this.selected = selected;
+	}
 
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - Public
+	public boolean getHighlighted() {
+		return this.highlighted;
+	}
 
-- (void)prepareForReuse {
-    self.layoutAttributes = nil;
-    self.selected = NO;
-    self.highlighted = NO;
-    self.accessibilityTraits = UIAccessibilityTraitNone;
-}
+	public void setHighlighted(boolean highlighted) {
+		this.highlighted = highlighted;
+	}
 
-// Selection highlights underlying contents
-- (void)setSelected:(BOOL)selected {
-    _collectionCellFlags.selected = selected;
-    self.accessibilityTraits = selected ? UIAccessibilityTraitSelected : UIAccessibilityTraitNone;
-    [self updateBackgroundView:selected];
-}
+	public mocha.ui.View getBackgroundView() {
+		return this.backgroundView;
+	}
 
-// Cell highlighting only highlights the cell itself
-- (void)setHighlighted:(BOOL)highlighted {
-    _collectionCellFlags.highlighted = highlighted;
-    [self updateBackgroundView:highlighted];
-}
+	public void setBackgroundView(mocha.ui.View backgroundView) {
+		this.backgroundView = backgroundView;
+	}
 
-- (void)updateBackgroundView:(BOOL)highlight {
-    _selectedBackgroundView.alpha = highlight ? 1.0f : 0.0f;
-    [self setHighlighted:highlight forViews:self.contentView.subviews];
-}
+	public mocha.ui.View getSelectedBackgroundView() {
+		return this.selectedBackgroundView;
+	}
 
-- (void)setHighlighted:(BOOL)highlighted forViews:(id)subviews {
-    for (id view in subviews) {
-        // Ignore the events if view wants to
-        if (!((UIView *)view).isUserInteractionEnabled &&
-                [view respondsToSelector:@selector(setHighlighted:)] &&
-                ![view isKindOfClass:UIControl.class]) {
-            [view setHighlighted:highlighted];
+	public void setSelectedBackgroundView(mocha.ui.View selectedBackgroundView) {
+		this.selectedBackgroundView = selectedBackgroundView;
+	}
 
-            [self setHighlighted:highlighted forViews:[view subviews]];
-        }
-    }
-}
-
-- (void)menuGesture:(UILongPressGestureRecognizer *)recognizer {
-    NSLog(@"Not yet implemented: %@", NSStringFromSelector(_cmd));
-}
-
-- (void)setBackgroundView:(UIView *)backgroundView {
-    if (_backgroundView != backgroundView) {
-        [_backgroundView removeFromSuperview];
-        _backgroundView = backgroundView;
-        _backgroundView.frame = self.bounds;
-        _backgroundView.autoresizingMask = UIViewAutoresizingFlexibleHeight|UIViewAutoresizingFlexibleWidth;
-        [self insertSubview:_backgroundView atIndex:0];
-    }
-}
-
-- (void)setSelectedBackgroundView:(UIView *)selectedBackgroundView {
-    if (_selectedBackgroundView != selectedBackgroundView) {
-        [_selectedBackgroundView removeFromSuperview];
-        _selectedBackgroundView = selectedBackgroundView;
-        _selectedBackgroundView.frame = self.bounds;
-        _selectedBackgroundView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
-        _selectedBackgroundView.alpha = self.selected ? 1.0f : 0.0f;
-        if (_backgroundView) {
-            [self insertSubview:_selectedBackgroundView aboveSubview:_backgroundView];
-        }
-        else {
-            [self insertSubview:_selectedBackgroundView atIndex:0];
-        }
-    }
-}
-
-- (BOOL)isSelected {
-    return _collectionCellFlags.selected;
 }
 
-- (BOOL)isHighlighted {
-    return _collectionCellFlags.highlighted;
-}
-
-- (void)performSelectionSegue {
-    /*
-        Currently there's no "official" way to trigger a storyboard segue
-        using UIStoryboardSegueTemplate, so we're doing it in a semi-legal way.
-     */
-    SEL selector = NSSelectorFromString([NSString stringWithFormat:@"per%@", @"form:"]);
-    if ([self->_selectionSegueTemplate respondsToSelector:selector]) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-        [self->_selectionSegueTemplate performSelector:selector withObject:self];
-#pragma clang diagnostic pop
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////
-#pragma mark - PSTCollection/UICollection interoperability
-
-#ifdef kPSUIInteroperabilityEnabled
-#import <objc/runtime.h>
-- (NSMethodSignature *)methodSignatureForSelector:(SEL)selector {
-    NSMethodSignature *sig = [super methodSignatureForSelector:selector];
-    if(!sig) {
-        NSString *selString = NSStringFromSelector(selector);
-        if ([selString hasPrefix:@"_"]) {
-            SEL cleanedSelector = NSSelectorFromString([selString substringFromIndex:1]);
-            sig = [super methodSignatureForSelector:cleanedSelector];
-        }
-    }
-    return sig;
-}
-
-- (void)forwardInvocation:(NSInvocation *)inv {
-    NSString *selString = NSStringFromSelector([inv selector]);
-    if ([selString hasPrefix:@"_"]) {
-        SEL cleanedSelector = NSSelectorFromString([selString substringFromIndex:1]);
-        if ([self respondsToSelector:cleanedSelector]) {
-            inv.selector = cleanedSelector;
-            [inv invokeWithTarget:self];
-        }
-    }else {
-        [super forwardInvocation:inv];
-    }
-}
-#endif
-
-@end

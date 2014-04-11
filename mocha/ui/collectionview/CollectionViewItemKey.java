@@ -52,27 +52,27 @@ class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<
 	/* ========================================== */
 
 	public CollectionViewLayout.CollectionViewItemType getType() {
-		return this.type;
+		return this._type;
 	}
 
 	public void setType(CollectionViewLayout.CollectionViewItemType type) {
-		this.type = type;
+		this._type = type;
 	}
 
 	public mocha.foundation.IndexPath getIndexPath() {
-		return this.indexPath;
+		return this._indexPath;
 	}
 
 	public void setIndexPath(mocha.foundation.IndexPath indexPath) {
-		this.indexPath = indexPath;
+		this._indexPath = indexPath;
 	}
 
 	public String getIdentifier() {
-		return this.identifier;
+		return this._identifier;
 	}
 
 	public void setIdentifier(String identifier) {
-		this.identifier = identifier;
+		this._identifier = identifier;
 	}
 
 }

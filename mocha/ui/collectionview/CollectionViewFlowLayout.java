@@ -427,74 +427,74 @@ class CollectionViewFlowLayout extends CollectionViewLayout {
 	}
 
 	public mocha.graphics.Size getItemSize() {
-		if(this.itemSize != null) {
-			return this.itemSize.copy();
+		if(this._itemSize != null) {
+			return this._itemSize.copy();
 		} else {
 			return mocha.graphics.Size.zero();
 		}
 	}
 
 	public void setItemSize(mocha.graphics.Size itemSize) {
-		if(this.itemSize != null) {
-			this.itemSize = itemSize.copy();
+		if(this._itemSize != null) {
+			this._itemSize = itemSize.copy();
 		} else {
-			this.itemSize = mocha.graphics.Size.zero();
+			this._itemSize = mocha.graphics.Size.zero();
 		}
 	}
 
 	public CollectionViewFlowLayout.CollectionViewScrollDirection getScrollDirection() {
-		return this.scrollDirection;
+		return this._scrollDirection;
 	}
 
 	public void setScrollDirection(CollectionViewFlowLayout.CollectionViewScrollDirection scrollDirection) {
-		this.scrollDirection = scrollDirection;
+		this._scrollDirection = scrollDirection;
 	}
 
 	public mocha.graphics.Size getHeaderReferenceSize() {
-		if(this.headerReferenceSize != null) {
-			return this.headerReferenceSize.copy();
+		if(this._headerReferenceSize != null) {
+			return this._headerReferenceSize.copy();
 		} else {
 			return mocha.graphics.Size.zero();
 		}
 	}
 
 	public void setHeaderReferenceSize(mocha.graphics.Size headerReferenceSize) {
-		if(this.headerReferenceSize != null) {
-			this.headerReferenceSize = headerReferenceSize.copy();
+		if(this._headerReferenceSize != null) {
+			this._headerReferenceSize = headerReferenceSize.copy();
 		} else {
-			this.headerReferenceSize = mocha.graphics.Size.zero();
+			this._headerReferenceSize = mocha.graphics.Size.zero();
 		}
 	}
 
 	public mocha.graphics.Size getFooterReferenceSize() {
-		if(this.footerReferenceSize != null) {
-			return this.footerReferenceSize.copy();
+		if(this._footerReferenceSize != null) {
+			return this._footerReferenceSize.copy();
 		} else {
 			return mocha.graphics.Size.zero();
 		}
 	}
 
 	public void setFooterReferenceSize(mocha.graphics.Size footerReferenceSize) {
-		if(this.footerReferenceSize != null) {
-			this.footerReferenceSize = footerReferenceSize.copy();
+		if(this._footerReferenceSize != null) {
+			this._footerReferenceSize = footerReferenceSize.copy();
 		} else {
-			this.footerReferenceSize = mocha.graphics.Size.zero();
+			this._footerReferenceSize = mocha.graphics.Size.zero();
 		}
 	}
 
 	public mocha.ui.EdgeInsets getSectionInset() {
-		if(this.sectionInset != null) {
-			return this.sectionInset.copy();
+		if(this._sectionInset != null) {
+			return this._sectionInset.copy();
 		} else {
 			return mocha.ui.EdgeInsets.zero();
 		}
 	}
 
 	public void setSectionInset(mocha.ui.EdgeInsets sectionInset) {
-		if(this.sectionInset != null) {
-			this.sectionInset = sectionInset.copy();
+		if(this._sectionInset != null) {
+			this._sectionInset = sectionInset.copy();
 		} else {
-			this.sectionInset = mocha.ui.EdgeInsets.zero();
+			this._sectionInset = mocha.ui.EdgeInsets.zero();
 		}
 	}
 

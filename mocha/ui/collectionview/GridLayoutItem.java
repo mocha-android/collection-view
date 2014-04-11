@@ -11,34 +11,34 @@ class GridLayoutItem extends MObject {
 	/* ========================================== */
 
 	public GridLayoutSection getSection() {
-		return this.section;
+		return this._section;
 	}
 
 	public void setSection(GridLayoutSection section) {
-		this.section = section;
+		this._section = section;
 	}
 
 	public GridLayoutRow getRowObject() {
-		return this.rowObject;
+		return this._rowObject;
 	}
 
 	public void setRowObject(GridLayoutRow rowObject) {
-		this.rowObject = rowObject;
+		this._rowObject = rowObject;
 	}
 
 	public mocha.graphics.Rect getItemFrame() {
-		if(this.itemFrame != null) {
-			return this.itemFrame.copy();
+		if(this._itemFrame != null) {
+			return this._itemFrame.copy();
 		} else {
 			return mocha.graphics.Rect.zero();
 		}
 	}
 
 	public void setItemFrame(mocha.graphics.Rect itemFrame) {
-		if(this.itemFrame != null) {
-			this.itemFrame = itemFrame.copy();
+		if(this._itemFrame != null) {
+			this._itemFrame = itemFrame.copy();
 		} else {
-			this.itemFrame = mocha.graphics.Rect.zero();
+			this._itemFrame = mocha.graphics.Rect.zero();
 		}
 	}
 

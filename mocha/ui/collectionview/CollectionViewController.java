@@ -117,27 +117,27 @@ class CollectionViewController extends mocha.ui.ViewController implements Collec
 	/* ========================================== */
 
 	public CollectionView getCollectionView() {
-		return this.collectionView;
+		return this._collectionView;
 	}
 
 	public void setCollectionView(CollectionView collectionView) {
-		this.collectionView = collectionView;
+		this._collectionView = collectionView;
 	}
 
 	public boolean getClearsSelectionOnViewWillAppear() {
-		return this.clearsSelectionOnViewWillAppear;
+		return this._clearsSelectionOnViewWillAppear;
 	}
 
 	public void setClearsSelectionOnViewWillAppear(boolean clearsSelectionOnViewWillAppear) {
-		this.clearsSelectionOnViewWillAppear = clearsSelectionOnViewWillAppear;
+		this._clearsSelectionOnViewWillAppear = clearsSelectionOnViewWillAppear;
 	}
 
 	private CollectionViewLayout getLayout() {
-		return this.layout;
+		return this._layout;
 	}
 
 	private void setLayout(CollectionViewLayout layout) {
-		this.layout = layout;
+		this._layout = layout;
 	}
 
 }

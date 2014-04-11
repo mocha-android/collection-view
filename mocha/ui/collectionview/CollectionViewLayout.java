@@ -166,123 +166,123 @@ class CollectionViewLayout extends MObject implements Serializable {
 		/* ========================================== */
 
 		public mocha.graphics.Rect getFrame() {
-			if(this.frame != null) {
-				return this.frame.copy();
+			if(this._frame != null) {
+				return this._frame.copy();
 			} else {
 				return mocha.graphics.Rect.zero();
 			}
 		}
 
 		public void setFrame(mocha.graphics.Rect frame) {
-			if(this.frame != null) {
-				this.frame = frame.copy();
+			if(this._frame != null) {
+				this._frame = frame.copy();
 			} else {
-				this.frame = mocha.graphics.Rect.zero();
+				this._frame = mocha.graphics.Rect.zero();
 			}
 		}
 
 		public mocha.graphics.Point getCenter() {
-			if(this.center != null) {
-				return this.center.copy();
+			if(this._center != null) {
+				return this._center.copy();
 			} else {
 				return mocha.graphics.Point.zero();
 			}
 		}
 
 		public void setCenter(mocha.graphics.Point center) {
-			if(this.center != null) {
-				this.center = center.copy();
+			if(this._center != null) {
+				this._center = center.copy();
 			} else {
-				this.center = mocha.graphics.Point.zero();
+				this._center = mocha.graphics.Point.zero();
 			}
 		}
 
 		public mocha.graphics.Size getSize() {
-			if(this.size != null) {
-				return this.size.copy();
+			if(this._size != null) {
+				return this._size.copy();
 			} else {
 				return mocha.graphics.Size.zero();
 			}
 		}
 
 		public void setSize(mocha.graphics.Size size) {
-			if(this.size != null) {
-				this.size = size.copy();
+			if(this._size != null) {
+				this._size = size.copy();
 			} else {
-				this.size = mocha.graphics.Size.zero();
+				this._size = mocha.graphics.Size.zero();
 			}
 		}
 
 		public CATransform3D getTransform3D() {
-			return this.transform3D;
+			return this._transform3D;
 		}
 
 		public void setTransform3D(CATransform3D transform3D) {
-			this.transform3D = transform3D;
+			this._transform3D = transform3D;
 		}
 
 		public float getAlpha() {
-			return this.alpha;
+			return this._alpha;
 		}
 
 		public void setAlpha(float alpha) {
-			this.alpha = alpha;
+			this._alpha = alpha;
 		}
 
 		public int getZIndex() {
-			return this.zIndex;
+			return this._zIndex;
 		}
 
 		public void setZIndex(int zIndex) {
-			this.zIndex = zIndex;
+			this._zIndex = zIndex;
 		}
 
 		public boolean getHidden() {
-			return this.hidden;
+			return this._hidden;
 		}
 
 		public void setHidden(boolean hidden) {
-			this.hidden = hidden;
+			this._hidden = hidden;
 		}
 
 		public mocha.foundation.IndexPath getIndexPath() {
-			return this.indexPath;
+			return this._indexPath;
 		}
 
 		public void setIndexPath(mocha.foundation.IndexPath indexPath) {
-			this.indexPath = indexPath;
+			this._indexPath = indexPath;
 		}
 
 		String getElementKind() {
-			return this.elementKind;
+			return this._elementKind;
 		}
 
 		void setElementKind(String elementKind) {
-			this.elementKind = elementKind;
+			this._elementKind = elementKind;
 		}
 
 		String getRepresentedElementKind() {
-			return this.representedElementKind;
+			return this._representedElementKind;
 		}
 
 		void setRepresentedElementKind(String representedElementKind) {
-			this.representedElementKind = representedElementKind;
+			this._representedElementKind = representedElementKind;
 		}
 
 		CollectionViewLayout.CollectionViewItemType getRepresentedElementCategory() {
-			return this.representedElementCategory;
+			return this._representedElementCategory;
 		}
 
 		void setRepresentedElementCategory(CollectionViewLayout.CollectionViewItemType representedElementCategory) {
-			this.representedElementCategory = representedElementCategory;
+			this._representedElementCategory = representedElementCategory;
 		}
 
 		private CollectionViewLayout.CollectionViewItemType getElementCategory() {
-			return this.elementCategory;
+			return this._elementCategory;
 		}
 
 		private void setElementCategory(CollectionViewLayout.CollectionViewItemType elementCategory) {
-			this.elementCategory = elementCategory;
+			this._elementCategory = elementCategory;
 		}
 
 	}
@@ -532,35 +532,35 @@ class CollectionViewLayout extends MObject implements Serializable {
 	/* ========================================== */
 
 	public CollectionView getCollectionView() {
-		return this.collectionView;
+		return this._collectionView;
 	}
 
 	public void setCollectionView(CollectionView collectionView) {
-		this.collectionView = collectionView;
+		this._collectionView = collectionView;
 	}
 
 	HashMap getDecorationViewClassDict() {
-		return this.decorationViewClassDict;
+		return this._decorationViewClassDict;
 	}
 
 	void setDecorationViewClassDict(HashMap decorationViewClassDict) {
-		this.decorationViewClassDict = decorationViewClassDict;
+		this._decorationViewClassDict = decorationViewClassDict;
 	}
 
 	HashMap getDecorationViewNibDict() {
-		return this.decorationViewNibDict;
+		return this._decorationViewNibDict;
 	}
 
 	void setDecorationViewNibDict(HashMap decorationViewNibDict) {
-		this.decorationViewNibDict = decorationViewNibDict;
+		this._decorationViewNibDict = decorationViewNibDict;
 	}
 
 	HashMap getDecorationViewExternalObjectsTables() {
-		return this.decorationViewExternalObjectsTables;
+		return this._decorationViewExternalObjectsTables;
 	}
 
 	void setDecorationViewExternalObjectsTables(HashMap decorationViewExternalObjectsTables) {
-		this.decorationViewExternalObjectsTables = decorationViewExternalObjectsTables;
+		this._decorationViewExternalObjectsTables = decorationViewExternalObjectsTables;
 	}
 
 }

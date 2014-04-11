@@ -93,51 +93,51 @@ class CollectionView extends mocha.ui.ScrollView implements mocha.ui.ScrollView.
 		/* ========================================== */
 
 		private CollectionView.Delegate getCollectionViewDelegate() {
-			return this.collectionViewDelegate;
+			return this._collectionViewDelegate;
 		}
 
 		private void setCollectionViewDelegate(CollectionView.Delegate collectionViewDelegate) {
-			this.collectionViewDelegate = collectionViewDelegate;
+			this._collectionViewDelegate = collectionViewDelegate;
 		}
 
 		private CollectionViewLayout getNibLayout() {
-			return this.nibLayout;
+			return this._nibLayout;
 		}
 
 		private void setNibLayout(CollectionViewLayout nibLayout) {
-			this.nibLayout = nibLayout;
+			this._nibLayout = nibLayout;
 		}
 
 		private HashMap getNibCellsExternalObjects() {
-			return this.nibCellsExternalObjects;
+			return this._nibCellsExternalObjects;
 		}
 
 		private void setNibCellsExternalObjects(HashMap nibCellsExternalObjects) {
-			this.nibCellsExternalObjects = nibCellsExternalObjects;
+			this._nibCellsExternalObjects = nibCellsExternalObjects;
 		}
 
 		private HashMap getSupplementaryViewsExternalObjects() {
-			return this.supplementaryViewsExternalObjects;
+			return this._supplementaryViewsExternalObjects;
 		}
 
 		private void setSupplementaryViewsExternalObjects(HashMap supplementaryViewsExternalObjects) {
-			this.supplementaryViewsExternalObjects = supplementaryViewsExternalObjects;
+			this._supplementaryViewsExternalObjects = supplementaryViewsExternalObjects;
 		}
 
 		private mocha.foundation.IndexPath getTouchingIndexPath() {
-			return this.touchingIndexPath;
+			return this._touchingIndexPath;
 		}
 
 		private void setTouchingIndexPath(mocha.foundation.IndexPath touchingIndexPath) {
-			this.touchingIndexPath = touchingIndexPath;
+			this._touchingIndexPath = touchingIndexPath;
 		}
 
 		private mocha.foundation.IndexPath getCurrentIndexPath() {
-			return this.currentIndexPath;
+			return this._currentIndexPath;
 		}
 
 		private void setCurrentIndexPath(mocha.foundation.IndexPath currentIndexPath) {
-			this.currentIndexPath = currentIndexPath;
+			this._currentIndexPath = currentIndexPath;
 		}
 
 	}
@@ -2192,59 +2192,59 @@ class CollectionView extends mocha.ui.ScrollView implements mocha.ui.ScrollView.
 	}
 
 	public CollectionView.Delegate getDelegate() {
-		return this.delegate;
+		return this._delegate;
 	}
 
 	public void setDelegate(CollectionView.Delegate delegate) {
-		this.delegate = delegate;
+		this._delegate = delegate;
 	}
 
 	public CollectionView.DataSource getDataSource() {
-		return this.dataSource;
+		return this._dataSource;
 	}
 
 	public void setDataSource(CollectionView.DataSource dataSource) {
-		this.dataSource = dataSource;
+		this._dataSource = dataSource;
 	}
 
 	public mocha.ui.View getBackgroundView() {
-		return this.backgroundView;
+		return this._backgroundView;
 	}
 
 	public void setBackgroundView(mocha.ui.View backgroundView) {
-		this.backgroundView = backgroundView;
+		this._backgroundView = backgroundView;
 	}
 
 	public boolean getAllowsSelection() {
-		return this.allowsSelection;
+		return this._allowsSelection;
 	}
 
 	public void setAllowsSelection(boolean allowsSelection) {
-		this.allowsSelection = allowsSelection;
+		this._allowsSelection = allowsSelection;
 	}
 
 	public boolean getAllowsMultipleSelection() {
-		return this.allowsMultipleSelection;
+		return this._allowsMultipleSelection;
 	}
 
 	public void setAllowsMultipleSelection(boolean allowsMultipleSelection) {
-		this.allowsMultipleSelection = allowsMultipleSelection;
+		this._allowsMultipleSelection = allowsMultipleSelection;
 	}
 
 	private CollectionViewData getCollectionViewData() {
-		return this.collectionViewData;
+		return this._collectionViewData;
 	}
 
 	private void setCollectionViewData(CollectionViewData collectionViewData) {
-		this.collectionViewData = collectionViewData;
+		this._collectionViewData = collectionViewData;
 	}
 
 	private CollectionView.Ext getExtVars() {
-		return this.extVars;
+		return this._extVars;
 	}
 
 	private void setExtVars(CollectionView.Ext extVars) {
-		this.extVars = extVars;
+		this._extVars = extVars;
 	}
 
 	private Object getCurrentUpdate() {
@@ -2264,18 +2264,18 @@ class CollectionView extends mocha.ui.ScrollView implements mocha.ui.ScrollView.
 	}
 
 	private mocha.graphics.Rect getVisibleBoundRects() {
-		if(this.visibleBoundRects != null) {
-			return this.visibleBoundRects.copy();
+		if(this._visibleBoundRects != null) {
+			return this._visibleBoundRects.copy();
 		} else {
 			return mocha.graphics.Rect.zero();
 		}
 	}
 
 	private void setVisibleBoundRects(mocha.graphics.Rect visibleBoundRects) {
-		if(this.visibleBoundRects != null) {
-			this.visibleBoundRects = visibleBoundRects.copy();
+		if(this._visibleBoundRects != null) {
+			this._visibleBoundRects = visibleBoundRects.copy();
 		} else {
-			this.visibleBoundRects = mocha.graphics.Rect.zero();
+			this._visibleBoundRects = mocha.graphics.Rect.zero();
 		}
 	}
 

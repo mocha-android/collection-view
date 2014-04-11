@@ -176,83 +176,83 @@ class GridLayoutRow extends MObject {
 	/* ========================================== */
 
 	public GridLayoutSection getSection() {
-		return this.section;
+		return this._section;
 	}
 
 	public void setSection(GridLayoutSection section) {
-		this.section = section;
+		this._section = section;
 	}
 
 	public ArrayList getItems() {
-		return this.items;
+		return this._items;
 	}
 
 	public void setItems(ArrayList items) {
-		this.items = items;
+		this._items = items;
 	}
 
 	public mocha.graphics.Size getRowSize() {
-		if(this.rowSize != null) {
-			return this.rowSize.copy();
+		if(this._rowSize != null) {
+			return this._rowSize.copy();
 		} else {
 			return mocha.graphics.Size.zero();
 		}
 	}
 
 	public void setRowSize(mocha.graphics.Size rowSize) {
-		if(this.rowSize != null) {
-			this.rowSize = rowSize.copy();
+		if(this._rowSize != null) {
+			this._rowSize = rowSize.copy();
 		} else {
-			this.rowSize = mocha.graphics.Size.zero();
+			this._rowSize = mocha.graphics.Size.zero();
 		}
 	}
 
 	public mocha.graphics.Rect getRowFrame() {
-		if(this.rowFrame != null) {
-			return this.rowFrame.copy();
+		if(this._rowFrame != null) {
+			return this._rowFrame.copy();
 		} else {
 			return mocha.graphics.Rect.zero();
 		}
 	}
 
 	public void setRowFrame(mocha.graphics.Rect rowFrame) {
-		if(this.rowFrame != null) {
-			this.rowFrame = rowFrame.copy();
+		if(this._rowFrame != null) {
+			this._rowFrame = rowFrame.copy();
 		} else {
-			this.rowFrame = mocha.graphics.Rect.zero();
+			this._rowFrame = mocha.graphics.Rect.zero();
 		}
 	}
 
 	public int getIndex() {
-		return this.index;
+		return this._index;
 	}
 
 	public void setIndex(int index) {
-		this.index = index;
+		this._index = index;
 	}
 
 	public boolean getComplete() {
-		return this.complete;
+		return this._complete;
 	}
 
 	public void setComplete(boolean complete) {
-		this.complete = complete;
+		this._complete = complete;
 	}
 
 	public boolean getFixedItemSize() {
-		return this.fixedItemSize;
+		return this._fixedItemSize;
 	}
 
 	public void setFixedItemSize(boolean fixedItemSize) {
-		this.fixedItemSize = fixedItemSize;
+		this._fixedItemSize = fixedItemSize;
 	}
 
 	public int getItemCount() {
-		return this.itemCount;
+		return this._itemCount;
 	}
 
 	public void setItemCount(int itemCount) {
-		this.itemCount = itemCount;
+		this._itemCount = itemCount;
 	}
 
 }

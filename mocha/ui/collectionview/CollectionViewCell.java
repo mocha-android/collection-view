@@ -166,43 +166,43 @@ class CollectionViewCell extends CollectionReusableView {
 	/* ========================================== */
 
 	public mocha.ui.View getContentView() {
-		return this.contentView;
+		return this._contentView;
 	}
 
 	public void setContentView(mocha.ui.View contentView) {
-		this.contentView = contentView;
+		this._contentView = contentView;
 	}
 
 	public boolean getSelected() {
-		return this.selected;
+		return this._selected;
 	}
 
 	public void setSelected(boolean selected) {
-		this.selected = selected;
+		this._selected = selected;
 	}
 
 	public boolean getHighlighted() {
-		return this.highlighted;
+		return this._highlighted;
 	}
 
 	public void setHighlighted(boolean highlighted) {
-		this.highlighted = highlighted;
+		this._highlighted = highlighted;
 	}
 
 	public mocha.ui.View getBackgroundView() {
-		return this.backgroundView;
+		return this._backgroundView;
 	}
 
 	public void setBackgroundView(mocha.ui.View backgroundView) {
-		this.backgroundView = backgroundView;
+		this._backgroundView = backgroundView;
 	}
 
 	public mocha.ui.View getSelectedBackgroundView() {
-		return this.selectedBackgroundView;
+		return this._selectedBackgroundView;
 	}
 
 	public void setSelectedBackgroundView(mocha.ui.View selectedBackgroundView) {
-		this.selectedBackgroundView = selectedBackgroundView;
+		this._selectedBackgroundView = selectedBackgroundView;
 	}
 
 }

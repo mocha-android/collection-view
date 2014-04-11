@@ -65,27 +65,27 @@ class CollectionReusableView extends mocha.ui.View {
 	/* ========================================== */
 
 	String getReuseIdentifier() {
-		return this.reuseIdentifier;
+		return this._reuseIdentifier;
 	}
 
 	void setReuseIdentifier(String reuseIdentifier) {
-		this.reuseIdentifier = reuseIdentifier;
+		this._reuseIdentifier = reuseIdentifier;
 	}
 
 	CollectionView getCollectionView() {
-		return this.collectionView;
+		return this._collectionView;
 	}
 
 	void setCollectionView(CollectionView collectionView) {
-		this.collectionView = collectionView;
+		this._collectionView = collectionView;
 	}
 
 	CollectionViewLayout.Attributes getLayoutAttributes() {
-		return this.layoutAttributes;
+		return this._layoutAttributes;
 	}
 
 	void setLayoutAttributes(CollectionViewLayout.Attributes layoutAttributes) {
-		this.layoutAttributes = layoutAttributes;
+		this._layoutAttributes = layoutAttributes;
 	}
 
 }

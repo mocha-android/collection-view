@@ -189,27 +189,27 @@ class CollectionViewData extends MObject {
 	/* ========================================== */
 
 	private CollectionView getCollectionView() {
-		return this.collectionView;
+		return this._collectionView;
 	}
 
 	private void setCollectionView(CollectionView collectionView) {
-		this.collectionView = collectionView;
+		this._collectionView = collectionView;
 	}
 
 	private CollectionViewLayout getLayout() {
-		return this.layout;
+		return this._layout;
 	}
 
 	private void setLayout(CollectionViewLayout layout) {
-		this.layout = layout;
+		this._layout = layout;
 	}
 
 	private ArrayList getCachedLayoutAttributes() {
-		return this.cachedLayoutAttributes;
+		return this._cachedLayoutAttributes;
 	}
 
 	private void setCachedLayoutAttributes(ArrayList cachedLayoutAttributes) {
-		this.cachedLayoutAttributes = cachedLayoutAttributes;
+		this._cachedLayoutAttributes = cachedLayoutAttributes;
 	}
 
 }

@@ -60,66 +60,66 @@ class GridLayoutInfo extends MObject {
 	/* ========================================== */
 
 	public ArrayList getSections() {
-		return this.sections;
+		return this._sections;
 	}
 
 	public void setSections(ArrayList sections) {
-		this.sections = sections;
+		this._sections = sections;
 	}
 
 	public HashMap getRowAlignmentOptions() {
-		return this.rowAlignmentOptions;
+		return this._rowAlignmentOptions;
 	}
 
 	public void setRowAlignmentOptions(HashMap rowAlignmentOptions) {
-		this.rowAlignmentOptions = rowAlignmentOptions;
+		this._rowAlignmentOptions = rowAlignmentOptions;
 	}
 
 	public boolean getUsesFloatingHeaderFooter() {
-		return this.usesFloatingHeaderFooter;
+		return this._usesFloatingHeaderFooter;
 	}
 
 	public void setUsesFloatingHeaderFooter(boolean usesFloatingHeaderFooter) {
-		this.usesFloatingHeaderFooter = usesFloatingHeaderFooter;
+		this._usesFloatingHeaderFooter = usesFloatingHeaderFooter;
 	}
 
 	public float getDimension() {
-		return this.dimension;
+		return this._dimension;
 	}
 
 	public void setDimension(float dimension) {
-		this.dimension = dimension;
+		this._dimension = dimension;
 	}
 
 	public boolean getHorizontal() {
-		return this.horizontal;
+		return this._horizontal;
 	}
 
 	public void setHorizontal(boolean horizontal) {
-		this.horizontal = horizontal;
+		this._horizontal = horizontal;
 	}
 
 	public boolean getLeftToRight() {
-		return this.leftToRight;
+		return this._leftToRight;
 	}
 
 	public void setLeftToRight(boolean leftToRight) {
-		this.leftToRight = leftToRight;
+		this._leftToRight = leftToRight;
 	}
 
 	public mocha.graphics.Size getContentSize() {
-		if(this.contentSize != null) {
-			return this.contentSize.copy();
+		if(this._contentSize != null) {
+			return this._contentSize.copy();
 		} else {
 			return mocha.graphics.Size.zero();
 		}
 	}
 
 	public void setContentSize(mocha.graphics.Size contentSize) {
-		if(this.contentSize != null) {
-			this.contentSize = contentSize.copy();
+		if(this._contentSize != null) {
+			this._contentSize = contentSize.copy();
 		} else {
-			this.contentSize = mocha.graphics.Size.zero();
+			this._contentSize = mocha.graphics.Size.zero();
 		}
 	}
 

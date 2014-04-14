@@ -1,3 +1,7 @@
+package mocha.ui.collectionview;
+
+import mocha.ui.View;
+
 class CollectionViewCell extends CollectionReusableView {
 	private mocha.ui.View _contentView;
 	private boolean _selected;
@@ -18,45 +22,16 @@ class CollectionViewCell extends CollectionReusableView {
 
 	}
 
-	void performSelectionSegue() {
-		/*
-		    Currently there's no "official" way to trigger a storyboard segue
-		    using UIStoryboardSegueTemplate, so we're doing it in a semi-legal way.
-		 */
-		SEL selector = mocha.foundation.SelectorFromString(String.format("per%s", "form:"));
-		if (this->_selectionSegueTemplate.respondsToSelector(selector)) {
-		    this->_selectionSegueTemplate.performSelectorWithObject(selector, this);
-		}
-	}
-
 	public CollectionViewCell(mocha.graphics.Rect frame) {
-		super.initWithFrame(frame);
+		super(frame);
 
 		_backgroundView = new mocha.ui.View(this.getBounds());
-		_backgroundView.setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
+		_backgroundView.setAutoresizing(View.Autoresizing.FLEXIBLE_HEIGHT, View.Autoresizing.FLEXIBLE_WIDTH);
 		this.addSubview(_backgroundView);
 					
 		_contentView = new mocha.ui.View(this.getBounds());
-		_contentView.setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
+		_contentView.setAutoresizing(View.Autoresizing.FLEXIBLE_HEIGHT, View.Autoresizing.FLEXIBLE_WIDTH);
 		this.addSubview(_contentView);
-					
-		_menuGesture = new mocha.ui.LongPressGestureRecognizer(this, "menuGesture");
-	}
-
-	public CollectionViewCell(mocha.foundation.Coder aDecoder) {
-		super.initWithCoder(aDecoder);
-
-		if (this.getSubviews().size() > 0) {
-		    _contentView = this.getSubviews().get(0);
-		}else {
-		    _contentView = new mocha.ui.View(this.getBounds());
-		    _contentView.setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
-		    this.addSubview(_contentView);
-		}
-					
-		_backgroundView = new mocha.ui.View(this.getBounds());
-		_backgroundView.setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
-		this.insertSubviewBelowSubview(_backgroundView, _contentView);
 					
 		_menuGesture = new mocha.ui.LongPressGestureRecognizer(this, "menuGesture");
 	}

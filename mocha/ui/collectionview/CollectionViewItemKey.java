@@ -3,52 +3,60 @@ package mocha.ui.collectionview;
 import mocha.foundation.MObject;
 
 class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<CollectionViewItemKey> {
+	static final String ELEMENT_KIND_CELL = "UICollectionElementKindCell";
+
 	private CollectionViewLayout.CollectionViewItemType _type;
 	private mocha.foundation.IndexPath _indexPath;
 	private String _identifier;
 
-	static Object collectionItemKeyForLayoutAttributes(CollectionViewLayout.Attributes layoutAttributes) {
-		CollectionViewItemKey key = this.getClass().new();
+	static CollectionViewItemKey collectionItemKeyForLayoutAttributes(CollectionViewLayout.Attributes layoutAttributes) {
+		CollectionViewItemKey key = new CollectionViewItemKey();
 		key.setIndexPath(layoutAttributes.getIndexPath());
-		CollectionViewLayout.CollectionViewItemType const itemType = layoutAttributes.getRepresentedElementCategory();
-		key.setType(itemType);
+		key.setType(layoutAttributes.getRepresentedElementCategory());
 		key.setIdentifier(layoutAttributes.getRepresentedElementKind());
 		return key;
 	}
 
-	static Object collectionItemKeyForCellWithIndexPath(mocha.foundation.IndexPath indexPath) {
-		CollectionViewItemKey key = this.getClass().new();
+	static CollectionViewItemKey collectionItemKeyForCellWithIndexPath(mocha.foundation.IndexPath indexPath) {
+		CollectionViewItemKey key = new CollectionViewItemKey();
 		key.setIndexPath(indexPath);
 		key.setType(CollectionViewLayout.CollectionViewItemType.CELL);
-		key.setIdentifier(PSTCollectionElementKindCell);
+		key.setIdentifier(ELEMENT_KIND_CELL);
 		return key;
 	}
 
-	String description() {
-		return String.format("<%s: %p Type = %s Identifier=%s IndexPath = %s>", StringFromClass(this.getClass()),
-		                                  this, CollectionViewLayout.CollectionViewItemTypeToString(this.getType()), _identifier, this.getIndexPath());
+	protected String toStringExtra() {
+		return String.format("Type = %s Identifier=%s IndexPath = %s", CollectionViewLayout.CollectionViewItemTypeToString(this.getType()), _identifier, this.getIndexPath());
 	}
 
-	int hash() {
-		return ((_indexPath.hash() + _type) * 31) + _identifier.hash();
+	public int hashCode() {
+		return ((_indexPath.hashCode() + _type) * 31) + _identifier.hashCode();
 	}
 
-	boolean isEqual(Object other) {
-		if (other.isKindOfClass(this.getClass())) {
+	public boolean equals(Object other) {
+		if(other instanceof CollectionViewItemKey) {
 		    CollectionViewItemKey otherKeyItem = (CollectionViewItemKey)other;
 		    // identifier might be null?
-		    if (_type == otherKeyItem.getType() && _indexPath.isEqual(otherKeyItem.getIndexPath()) && (_identifier.isEqualToString(otherKeyItem.getIdentifier()) || _identifier == otherKeyItem.getIdentifier())) {
+		    if (_type == otherKeyItem.getType() && _indexPath.equals(otherKeyItem.getIndexPath()) && (_identifier.equals(otherKeyItem.getIdentifier()) || _identifier.equals(otherKeyItem.getIdentifier()))) {
 		        return true;
 		    }
 		}
 		return false;
 	}
 
-	Object copyWithZone(mocha.foundation.Zone zone) {
-		CollectionViewItemKey itemKey = this.getClass().new();
+	public CollectionViewItemKey copy() {
+		CollectionViewItemKey itemKey;
+
+		try {
+			itemKey = this.getClass().newInstance();
+		} catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+
 		itemKey.setIndexPath(this.getIndexPath());
 		itemKey.setType(this.getType());
 		itemKey.setIdentifier(this.getIdentifier());
+
 		return itemKey;
 	}
 

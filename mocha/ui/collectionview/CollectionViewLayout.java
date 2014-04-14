@@ -1,28 +1,29 @@
 package mocha.ui.collectionview;
 
 import mocha.foundation.MObject;
+import mocha.graphics.AffineTransform;
+import mocha.graphics.Rect;
+import mocha.graphics.Size;
+import mocha.ui.View;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 
-public class CollectionViewLayout extends MObject implements Serializable {
+abstract public class CollectionViewLayout extends MObject implements Serializable {
 	private CollectionView _collectionView;
-	private HashMap _decorationViewClassDict;
-	private HashMap _decorationViewNibDict;
+	private Map<String,Class<? extends View>> _decorationViewClassDict;
 	private HashMap _decorationViewExternalObjectsTables;
 	private mocha.graphics.Size _collectionViewBoundsSize;
-	private HashMap _initialAnimationLayoutAttributesDict;
-	private HashMap _finalAnimationLayoutAttributesDict;
-	private mocha.foundation.MutableIndexSet _deletedSectionsSet;
-	private mocha.foundation.MutableIndexSet _insertedSectionsSet;
-	private Character filler;
+	private Map<CollectionViewItemKey,Attributes> _initialAnimationLayoutAttributesDict;
+	private Map<CollectionViewItemKey,Attributes> _finalAnimationLayoutAttributesDict;
+	private Set<Integer> _deletedSectionsSet;
+	private Set<Integer> _insertedSectionsSet;
 
 	public static class Attributes extends MObject implements mocha.foundation.Copying<Attributes> {
 		private mocha.graphics.Rect _frame;
 		private mocha.graphics.Point _center;
 		private mocha.graphics.Size _size;
-		private CATransform3D _transform3D;
+		private AffineTransform _transform3D;
 		private float _alpha;
 		private int _zIndex;
 		private boolean _hidden;
@@ -30,7 +31,6 @@ public class CollectionViewLayout extends MObject implements Serializable {
 		private String _elementKind;
 		private String _representedElementKind;
 		private CollectionViewLayout.CollectionViewItemType _representedElementCategory;
-		private Character filler;
 		private LayoutFlagsStruct _layoutFlags = new LayoutFlagsStruct();
 		private CollectionViewLayout.CollectionViewItemType _elementCategory;
 
@@ -38,27 +38,59 @@ public class CollectionViewLayout extends MObject implements Serializable {
 			boolean isCellKind;
 			boolean isDecorationView;
 			boolean isHidden;
-
 		}
 
-		static Attributes layoutAttributesForCellWithIndexPath(mocha.foundation.IndexPath indexPath) {
-			CollectionViewLayout.Attributes attributes = new this();
-			attributes.setElementKind(PSTCollectionElementKindCell);
+		public static Attributes layoutAttributesForCellWithIndexPath(mocha.foundation.IndexPath indexPath) {
+			return layoutAttributesForCellWithIndexPath(Attributes.class, indexPath);
+		}
+
+		public static Attributes layoutAttributesForCellWithIndexPath(Class<? extends Attributes> attributesClass, mocha.foundation.IndexPath indexPath) {
+			Attributes attributes;
+
+			try {
+				attributes = attributesClass.newInstance();
+			} catch (InstantiationException | IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
+
+			attributes.setElementKind(CollectionViewItemKey.ELEMENT_KIND_CELL);
 			attributes.setElementCategory(CollectionViewLayout.CollectionViewItemType.CELL);
 			attributes.setIndexPath(indexPath);
 			return attributes;
 		}
 
-		static Attributes layoutAttributesForSupplementaryViewOfKindWithIndexPath(String elementKind, mocha.foundation.IndexPath indexPath) {
-			CollectionViewLayout.Attributes attributes = new this();
+		public static Attributes layoutAttributesForSupplementaryViewOfKindWithIndexPath(String elementKind, mocha.foundation.IndexPath indexPath) {
+			return layoutAttributesForSupplementaryViewOfKindWithIndexPath(Attributes.class, elementKind, indexPath);
+		}
+
+		public static Attributes layoutAttributesForSupplementaryViewOfKindWithIndexPath(Class<? extends Attributes> attributesClass, String elementKind, mocha.foundation.IndexPath indexPath) {
+			Attributes attributes;
+
+			try {
+				attributes = attributesClass.newInstance();
+			} catch (InstantiationException | IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
+
 			attributes.setElementCategory(CollectionViewLayout.CollectionViewItemType.SUPPLEMENTARY_VIEW);
 			attributes.setElementKind(elementKind);
 			attributes.setIndexPath(indexPath);
 			return attributes;
 		}
 
-		static Attributes layoutAttributesForDecorationViewOfKindWithIndexPath(String elementKind, mocha.foundation.IndexPath indexPath) {
-			CollectionViewLayout.Attributes attributes = new this();
+		public static Attributes layoutAttributesForDecorationViewOfKindWithIndexPath(String elementKind, mocha.foundation.IndexPath indexPath) {
+			return layoutAttributesForDecorationViewOfKindWithIndexPath(Attributes.class, elementKind, indexPath);
+		}
+
+		public static Attributes layoutAttributesForDecorationViewOfKindWithIndexPath(Class<? extends Attributes> attributesClass, String elementKind, mocha.foundation.IndexPath indexPath) {
+			Attributes attributes;
+
+			try {
+				attributes = attributesClass.newInstance();
+			} catch (InstantiationException | IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
+
 			attributes.setElementCategory(CollectionViewLayout.CollectionViewItemType.DECORATION_VIEW);
 			attributes.setElementKind(elementKind);
 			attributes.setIndexPath(indexPath);
@@ -78,28 +110,29 @@ public class CollectionViewLayout extends MObject implements Serializable {
 		}
 
 		public Attributes() {
-			super.init();
-
-			_alpha = 1.f;
-			_transform3D = CATransform3DIdentity;
+			_alpha = 1.0f;
+			_transform3D = AffineTransform.identity();
 		}
 
-		int hash() {
-			return (_elementKind.hash() * 31) + _indexPath.hash();
+		public int hashCode() {
+			return (_elementKind.hashCode() * 31) + _indexPath.hashCode();
 		}
 
-		boolean isEqual(Object other) {
-			if (other.isKindOfClass(this.getClass())) {
+		public boolean equals(Object other) {
+			if(other == this) {
+				return true;
+			} else if(this.getClass().isAssignableFrom(other.getClass())) {
 			    CollectionViewLayout.Attributes otherLayoutAttributes = (CollectionViewLayout.Attributes)other;
-			    if (_elementCategory == otherLayoutAttributes.getElementCategory() && _elementKind.isEqual(otherLayoutAttributes.getElementKind()) && _indexPath.isEqual(otherLayoutAttributes.getIndexPath())) {
+			    if (_elementCategory == otherLayoutAttributes.getElementCategory() && _elementKind.equals(otherLayoutAttributes.getElementKind()) && _indexPath.equals(otherLayoutAttributes.getIndexPath())) {
 			        return true;
 			    }
 			}
+
 			return false;
 		}
 
-		String description() {
-			return String.format("<%s: %p frame:%s indexPath:%s elementKind:%s>", StringFromClass(this.getClass()), this, StringFromCGRect(this.getFrame()), this.getIndexPath(), this.getElementKind());
+		protected String toStringExtra() {
+			return String.format("frame:%s indexPath:%s elementKind:%s", this.getFrame(), this.getIndexPath(), this.getElementKind());
 		}
 
 		CollectionViewLayout.CollectionViewItemType representedElementCategory() {
@@ -114,60 +147,35 @@ public class CollectionViewLayout extends MObject implements Serializable {
 			_frame = new mocha.graphics.Rect(_center.x - _size.width / 2, _center.y - _size.height / 2, _size.width, _size.height);
 		}
 
-		void setSize(mocha.graphics.Size size) {
-			_size = size;
-			this.updateFrame();
-		}
-
-		void setCenter(mocha.graphics.Point center) {
-			_center = center;
-			this.updateFrame();
-		}
-
 		void setFrame(mocha.graphics.Rect frame) {
-			_frame = frame;
-			_size = _frame.size;
-			_center = new mocha.graphics.Point(mocha.graphics.RectGetMidX(_frame), mocha.graphics.RectGetMidY(_frame));
+			if(this._frame != null) {
+				this._frame = frame.copy();
+			} else {
+				this._frame = mocha.graphics.Rect.zero();
+			}
+
+			this._size = this._frame.size;
+			this._center = new mocha.graphics.Point(this._frame.midX(), this._frame.midY());
 		}
 
-		Object copyWithZone(mocha.foundation.Zone zone) {
-			CollectionViewLayout.Attributes layoutAttributes = this.getClass().new();
-			layoutAttributes.setIndexPath(this.getIndexPath());
+		public Attributes copy() {
+			Attributes layoutAttributes = null;
+			try {
+				layoutAttributes = this.getClass().newInstance();
+			} catch (InstantiationException | IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
+
+			layoutAttributes.setIndexPath(this._indexPath);
 			layoutAttributes.setElementKind(this.getElementKind());
 			layoutAttributes.setElementCategory(this.getElementCategory());
-			layoutAttributes.setFrame(this.getFrame());
-			layoutAttributes.setCenter(this.getCenter());
-			layoutAttributes.setSize(this.getSize());
+			layoutAttributes.setFrame(this._frame);
 			layoutAttributes.setTransform3D(this.getTransform3D());
-			layoutAttributes.setAlpha(this.getAlpha());
-			layoutAttributes.setZIndex(this.getZIndex());
-			layoutAttributes.setHidden(this.getIsHidden());
+			layoutAttributes.setAlpha(this._alpha);
+			layoutAttributes.setZIndex(this._zIndex);
+			layoutAttributes.setHidden(this._hidden);
+
 			return layoutAttributes;
-		}
-
-		mocha.foundation.MethodSignature methodSignatureForSelector(SEL selector) {
-			mocha.foundation.MethodSignature signature = super.methodSignatureForSelector(selector);
-			if (!signature) {
-			    String selString = StringFromSelector(selector);
-			    if (selString.hasPrefix("_")) {
-			        SEL cleanedSelector = mocha.foundation.SelectorFromString(selString.substringFromIndex(1));
-			        signature = super.methodSignatureForSelector(cleanedSelector);
-			    }
-			}
-			return signature;
-		}
-
-		void forwardInvocation(mocha.foundation.Invocation invocation) {
-			String selString = StringFromSelector(invocation.selector());
-			if (selString.hasPrefix("_")) {
-			    SEL cleanedSelector = mocha.foundation.SelectorFromString(selString.substringFromIndex(1));
-			    if (this.respondsToSelector(cleanedSelector)) {
-			        invocation.setSelector(cleanedSelector);
-			        invocation.invokeWithTarget(this);
-			    }
-			}else {
-			    super.forwardInvocation(invocation);
-			}
 		}
 
 		/* Setters & Getters */
@@ -178,14 +186,6 @@ public class CollectionViewLayout extends MObject implements Serializable {
 				return this._frame.copy();
 			} else {
 				return mocha.graphics.Rect.zero();
-			}
-		}
-
-		public void setFrame(mocha.graphics.Rect frame) {
-			if(this._frame != null) {
-				this._frame = frame.copy();
-			} else {
-				this._frame = mocha.graphics.Rect.zero();
 			}
 		}
 
@@ -203,6 +203,8 @@ public class CollectionViewLayout extends MObject implements Serializable {
 			} else {
 				this._center = mocha.graphics.Point.zero();
 			}
+
+			this.updateFrame();
 		}
 
 		public mocha.graphics.Size getSize() {
@@ -219,13 +221,15 @@ public class CollectionViewLayout extends MObject implements Serializable {
 			} else {
 				this._size = mocha.graphics.Size.zero();
 			}
+
+			this.updateFrame();
 		}
 
-		public CATransform3D getTransform3D() {
+		public AffineTransform getTransform3D() {
 			return this._transform3D;
 		}
 
-		public void setTransform3D(CATransform3D transform3D) {
+		public void setTransform3D(AffineTransform transform3D) {
 			this._transform3D = transform3D;
 		}
 
@@ -301,60 +305,46 @@ public class CollectionViewLayout extends MObject implements Serializable {
 		DECORATION_VIEW
 	}
 
-	void invalidateLayout() {
+	public void invalidateLayout() {
 		_collectionView.collectionViewData().invalidate();
 		_collectionView.setNeedsLayout();
 	}
 
-	void registerClassForDecorationViewOfKind(Class viewClass, String kind) {
+	public void registerClassForDecorationViewOfKind(Class<? extends View> viewClass, String kind) {
 		_decorationViewClassDict.put(kind, viewClass);
 	}
 
-	void registerNibForDecorationViewOfKind(mocha.ui.Nib nib, String kind) {
-		_decorationViewNibDict.put(kind, nib);
+	public Class<? extends CollectionViewLayout.Attributes> layoutAttributesClass() {
+		return CollectionViewLayout.Attributes.class;
 	}
 
-	static Class layoutAttributesClass() {
-		return CollectionViewLayout.Attributes.getClass();
-	}
-
-	void prepareLayout() {
+	public void collectionViewDelegateDidChange() {
 
 	}
 
-	ArrayList layoutAttributesForElementsInRect(mocha.graphics.Rect rect) {
-		return null;
-	}
+	abstract public void prepareLayout();
 
-	CollectionViewLayout.Attributes layoutAttributesForItemAtIndexPath(mocha.foundation.IndexPath indexPath) {
-		return null;
-	}
+	abstract public List<Attributes> layoutAttributesForElementsInRect(mocha.graphics.Rect rect);
 
-	CollectionViewLayout.Attributes layoutAttributesForSupplementaryViewOfKindAtIndexPath(String kind, mocha.foundation.IndexPath indexPath) {
-		return null;
-	}
+	abstract public CollectionViewLayout.Attributes layoutAttributesForItemAtIndexPath(mocha.foundation.IndexPath indexPath);
 
-	CollectionViewLayout.Attributes layoutAttributesForDecorationViewOfKindAtIndexPath(String kind, mocha.foundation.IndexPath indexPath) {
-		return null;
-	}
+	abstract public CollectionViewLayout.Attributes layoutAttributesForSupplementaryViewOfKindAtIndexPath(String kind, mocha.foundation.IndexPath indexPath);
 
-	boolean shouldInvalidateLayoutForBoundsChange(mocha.graphics.Rect newBounds) {
+	abstract public CollectionViewLayout.Attributes layoutAttributesForDecorationViewOfKindAtIndexPath(String kind, mocha.foundation.IndexPath indexPath);
+
+	public boolean shouldInvalidateLayoutForBoundsChange(mocha.graphics.Rect newBounds) {
 		// not sure about his..
-		if ((this.getCollectionView().getBounds().getSize().getWidth() != newBounds.size.width) || (this.getCollectionView().getBounds().getSize().getHeight() != newBounds.size.height)) {
-		    return true;
-		}
-		return false;
+		Rect bounds = this.getCollectionView().getBounds();
+		return (bounds.size.width != newBounds.size.width) || (bounds.size.height != newBounds.size.height);
 	}
 
-	mocha.graphics.Point targetContentOffsetForProposedContentOffsetWithScrollingVelocity(mocha.graphics.Point proposedContentOffset, mocha.graphics.Point velocity) {
+	public mocha.graphics.Point targetContentOffsetForProposedContentOffsetWithScrollingVelocity(mocha.graphics.Point proposedContentOffset, mocha.graphics.Point velocity) {
 		return proposedContentOffset;
 	}
 
-	mocha.graphics.Size collectionViewContentSize() {
-		return mocha.graphics.Size.zero();
-	}
+	abstract public mocha.graphics.Size collectionViewContentSize();
 
-	void prepareForCollectionViewUpdates(ArrayList updateItems) {
+	public void prepareForCollectionViewUpdates(ArrayList updateItems) {
 		HashMap update = _collectionView.currentUpdate();
 
 		for (CollectionReusableView view  : _collectionView.visibleViewsDict().objectEnumerator()) {
@@ -375,7 +365,7 @@ public class CollectionViewLayout extends MObject implements Serializable {
 		mocha.graphics.Rect bounds = _collectionView.visibleBoundRects();
 
 		for (CollectionViewLayout.Attributes attr  : collectionViewData.layoutAttributesForElementsInRect(bounds)) {
-		    if (attr.getIsCell()) {
+		    if (attr.isCell()) {
 		        int index = collectionViewData.globalIndexForItemAtIndexPath(attr.getIndexPath());
 
 		        index = update.get("newToOldIndexMap").get(index).intValue();
@@ -407,7 +397,7 @@ public class CollectionViewLayout extends MObject implements Serializable {
 
 		            CollectionViewLayout.Attributes attrs = _finalAnimationLayoutAttributesDict.get(key).copy();
 
-		            if (attrs) {
+		            if (attrs != null) {
 		                attrs.setAlpha(0);
 		                _finalAnimationLayoutAttributesDict.put(key, attrs);
 		            }
@@ -416,7 +406,7 @@ public class CollectionViewLayout extends MObject implements Serializable {
 		            CollectionViewItemKey key = CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(updateItem.indexPathAfterUpdate());
 		            CollectionViewLayout.Attributes attrs = _initialAnimationLayoutAttributesDict.get(key).copy();
 
-		            if (attrs) {
+		            if (attrs != null) {
 		                attrs.setAlpha(0);
 		                _initialAnimationLayoutAttributesDict.put(key, attrs);
 		            }
@@ -425,40 +415,42 @@ public class CollectionViewLayout extends MObject implements Serializable {
 		}
 	}
 
-	void finalizeCollectionViewUpdates() {
-		_initialAnimationLayoutAttributesDict.removeAllObjects();
-		_finalAnimationLayoutAttributesDict.removeAllObjects();
-		_deletedSectionsSet.removeAllIndexes();
-		_insertedSectionsSet.removeAllIndexes();
+	public void finalizeCollectionViewUpdates() {
+		_initialAnimationLayoutAttributesDict.clear();
+		_finalAnimationLayoutAttributesDict.clear();
+		_deletedSectionsSet.clear();
+		_insertedSectionsSet.clear();
 	}
 
-	public CollectionViewLayout(mocha.foundation.IndexPath itemIndexPath) {
+	public CollectionViewLayout.Attributes initialLayoutAttributesForAppearingItemAtIndexPath(mocha.foundation.IndexPath itemIndexPath) {
 		CollectionViewLayout.Attributes attrs = _initialAnimationLayoutAttributesDict.get(CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(itemIndexPath));
 
-		if (_insertedSectionsSet.containsIndex(itemIndexPath.section())) {
+		if (_insertedSectionsSet.contains(itemIndexPath.section)) {
 		    attrs = attrs.copy();
 		    attrs.setAlpha(0);
 		}
+
 		return attrs;
 	}
 
-	CollectionViewLayout.Attributes finalLayoutAttributesForDisappearingItemAtIndexPath(mocha.foundation.IndexPath itemIndexPath) {
+	public CollectionViewLayout.Attributes finalLayoutAttributesForDisappearingItemAtIndexPath(mocha.foundation.IndexPath itemIndexPath) {
 		CollectionViewLayout.Attributes attrs = _finalAnimationLayoutAttributesDict.get(CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(itemIndexPath));
 
-		if (_deletedSectionsSet.containsIndex(itemIndexPath.section())) {
+		if (_deletedSectionsSet.contains(itemIndexPath.section)) {
 		    attrs = attrs.copy();
 		    attrs.setAlpha(0);
 		}
 		return attrs;
 	}
 
-	public CollectionViewLayout(String elementKind, mocha.foundation.IndexPath elementIndexPath) {
+	public CollectionViewLayout.Attributes initialLayoutAttributesForInsertedSupplementaryElementOfKind(String elementKind, mocha.foundation.IndexPath elementIndexPath) {
 		CollectionViewLayout.Attributes attrs = _initialAnimationLayoutAttributesDict.get(CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(elementIndexPath));
 
-		if (_insertedSectionsSet.containsIndex(elementIndexPath.section())) {
+		if (_insertedSectionsSet.contains(elementIndexPath.section)) {
 		    attrs = attrs.copy();
 		    attrs.setAlpha(0);
 		}
+
 		return attrs;
 	}
 
@@ -467,73 +459,29 @@ public class CollectionViewLayout extends MObject implements Serializable {
 	}
 
 	void setCollectionViewBoundsSize(mocha.graphics.Size size) {
-		_collectionViewBoundsSize = size;
+		if(size != null) {
+			_collectionViewBoundsSize = size.copy();
+		} else {
+			_collectionViewBoundsSize = Size.zero();
+		}
 	}
 
-	CollectionReusableView decorationViewForCollectionViewWithReuseIdentifierIndexPath(CollectionView collectionView, String reuseIdentifier, mocha.foundation.IndexPath indexPath) {
+	abstract CollectionReusableView decorationViewForCollectionViewWithReuseIdentifierIndexPath(CollectionView collectionView, String reuseIdentifier, mocha.foundation.IndexPath indexPath);
 
+	public CollectionViewLayout(Rect frame) {
+		super(frame);
+
+		_decorationViewClassDict = new HashMap<>();
+		_decorationViewExternalObjectsTables = new HashMap();
+		_initialAnimationLayoutAttributesDict = new HashMap<>();
+		_finalAnimationLayoutAttributesDict = new HashMap<>();
+		_insertedSectionsSet = new HashSet<>();
+		_deletedSectionsSet = new HashSet<>();
 	}
+
 
 	public CollectionViewLayout() {
-		super.init();
-
-		_decorationViewClassDict = new HashMap();
-		_decorationViewNibDict = new HashMap();
-		_decorationViewExternalObjectsTables = new HashMap();
-		_initialAnimationLayoutAttributesDict = new HashMap();
-		_finalAnimationLayoutAttributesDict = new HashMap();
-		_insertedSectionsSet = new mocha.foundation.MutableIndexSet();
-		_deletedSectionsSet = new mocha.foundation.MutableIndexSet();
-	}
-
-	void awakeFromNib() {
-		super.awakeFromNib();
-	}
-
-	void setCollectionView(CollectionView collectionView) {
-		if (collectionView != _collectionView) {
-		    _collectionView = collectionView;
-		}
-	}
-
-	public CollectionViewLayout(mocha.foundation.Coder coder) {
-		this.init();
-	}
-
-	void encodeWithCoder(mocha.foundation.Coder coder) {
-
-	}
-
-	mocha.foundation.MethodSignature methodSignatureForSelector(SEL selector) {
-		mocha.foundation.MethodSignature sig = super.methodSignatureForSelector(selector);
-		if(!sig) {
-		    String selString = StringFromSelector(selector);
-		    if (selString.hasPrefix("_")) {
-		        SEL cleanedSelector = mocha.foundation.SelectorFromString(selString.substringFromIndex(1));
-		        sig = super.methodSignatureForSelector(cleanedSelector);
-		    }
-		}
-		return sig;
-	}
-
-	void forwardInvocation(mocha.foundation.Invocation inv) {
-		String selString = StringFromSelector(inv.selector());
-		if (selString.hasPrefix("_")) {
-		    SEL cleanedSelector = mocha.foundation.SelectorFromString(selString.substringFromIndex(1));
-		    if (this.respondsToSelector(cleanedSelector)) {
-		        // dynamically add method for faster resolving
-		        Method newMethod = class_getInstanceMethod(this.getClass(), inv.selector());
-		        IMP underscoreIMP = imp_implementationWithBlock(^(id _this) {
-		            return objc_msgSend(_this, cleanedSelector);
-		        });
-		        class_addMethod(this.getClass(), inv.selector(), underscoreIMP, method_getTypeEncoding(newMethod));
-		        // invoke now
-		        inv.setSelector(cleanedSelector);
-		        inv.invokeWithTarget(this);
-		    }
-		}else {
-		    super.forwardInvocation(inv);
-		}
+		this(Rect.zero());
 	}
 
 	/* Setters & Getters */
@@ -544,23 +492,17 @@ public class CollectionViewLayout extends MObject implements Serializable {
 	}
 
 	public void setCollectionView(CollectionView collectionView) {
-		this._collectionView = collectionView;
+		if (collectionView != _collectionView) {
+			_collectionView = collectionView;
+		}
 	}
 
-	HashMap getDecorationViewClassDict() {
+	Map<String, Class<? extends View>> getDecorationViewClassDict() {
 		return this._decorationViewClassDict;
 	}
 
 	void setDecorationViewClassDict(HashMap decorationViewClassDict) {
 		this._decorationViewClassDict = decorationViewClassDict;
-	}
-
-	HashMap getDecorationViewNibDict() {
-		return this._decorationViewNibDict;
-	}
-
-	void setDecorationViewNibDict(HashMap decorationViewNibDict) {
-		this._decorationViewNibDict = decorationViewNibDict;
 	}
 
 	HashMap getDecorationViewExternalObjectsTables() {

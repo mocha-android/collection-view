@@ -4,7 +4,6 @@ public class CollectionReusableView extends mocha.ui.View {
 	private String _reuseIdentifier;
 	private CollectionView _collectionView;
 	private CollectionViewLayout.Attributes _layoutAttributes;
-	private Character filler;
 	private ReusableViewFlagsStruct _reusableViewFlags = new ReusableViewFlagsStruct();
 
 	private class ReusableViewFlagsStruct {
@@ -20,12 +19,12 @@ public class CollectionReusableView extends mocha.ui.View {
 		if (layoutAttributes != _layoutAttributes) {
 		    _layoutAttributes = layoutAttributes;
 
-		    this.setBounds(new mocha.graphics.Rect(this.getBounds().getOrigin(), layoutAttributes.size));
+		    this.setBounds(new mocha.graphics.Rect(this.getBounds().origin, layoutAttributes.getSize()));
 		    this.setCenter(layoutAttributes.getCenter());
 		    this.setHidden(layoutAttributes.getHidden());
-		    this.getLayer().setTransform(layoutAttributes.getTransform3D());
+			this.setTransform(layoutAttributes.getTransform3D());
 		    this.getLayer().setZPosition(layoutAttributes.getZIndex());
-		    this.getLayer().setOpacity(layoutAttributes.getAlpha());
+			this.setAlpha(layoutAttributes.getAlpha());
 		}
 	}
 
@@ -42,17 +41,7 @@ public class CollectionReusableView extends mocha.ui.View {
 	}
 
 	public CollectionReusableView(mocha.graphics.Rect frame) {
-		super.initWithFrame(frame);
-	}
-
-	public CollectionReusableView(mocha.foundation.Coder aDecoder) {
-		super.initWithCoder(aDecoder);
-
-		this.setReuseIdentifier(aDecoder.decodeObjectForKey("UIReuseIdentifier"));
-	}
-
-	void awakeFromNib() {
-		this.setReuseIdentifier(this.valueForKeyPath("reuseIdentifier"));
+		super(frame);
 	}
 
 	boolean isInUpdateAnimation() {

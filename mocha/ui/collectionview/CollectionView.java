@@ -2,13 +2,14 @@ package mocha.ui.collectionview;
 
 import com.android.internal.util.Predicate;
 import mocha.foundation.MObject;
+import mocha.ui.ScrollView;
 import mocha.ui.View;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public class CollectionView extends mocha.ui.ScrollView implements mocha.ui.ScrollView.Delegate {
+public class CollectionView extends mocha.ui.ScrollView implements ScrollView.Listener {
 	private CollectionView.Delegate _delegate;
 	private CollectionView.DataSource _dataSource;
 	private mocha.ui.View _backgroundView;
@@ -166,7 +167,7 @@ public class CollectionView extends mocha.ui.ScrollView implements mocha.ui.Scro
 
 	}
 
-	public interface Delegate extends mocha.ui.ScrollView.Delegate {
+	public interface Delegate extends Listener {
 
 		@Optional
 		boolean collectionViewShouldHighlightItemAtIndexPath(CollectionView collectionView, mocha.foundation.IndexPath indexPath);
@@ -750,53 +751,14 @@ public class CollectionView extends mocha.ui.ScrollView implements mocha.ui.Scro
 	}
 
 	public CollectionView(mocha.graphics.Rect frame) {
-		return this.initWithFrameCollectionViewLayout(frame, null);
+		this(frame, null);
 	}
 
-	public CollectionView(mocha.foundation.Coder inCoder) {
-		super.initWithCoder(inCoder);
-
-		// Set this as the mocha.ui.ScrollView's delegate
-		super.setDelegate(this);
-					
-		CollectionView._this(this);
-					
-		this.getExtVars().setNibLayout(inCoder.decodeObjectForKey("UICollectionLayout"));
-					
-		HashMap cellExternalObjects = inCoder.decodeObjectForKey("UICollectionViewCellPrototypeNibExternalObjects");
-		HashMap cellNibs = inCoder.decodeObjectForKey("UICollectionViewCellNibDict");
-					
-		for (String identifier  : cellNibs.getAllKeys()) {
-		    _cellNibDict.put(identifier, cellNibs.get(identifier));
-		}
-					
-		this.getExtVars().setNibCellsExternalObjects(cellExternalObjects);
-					
-		HashMap supplementaryViewExternalObjects = inCoder.decodeObjectForKey("UICollectionViewSupplementaryViewPrototypeNibExternalObjects");
-		HashMap supplementaryViewNibs = inCoder.decodeObjectForKey("UICollectionViewSupplementaryViewNibDict");
-					
-		for (String identifier  : supplementaryViewNibs.getAllKeys()) {
-		    _supplementaryViewNibDict.put(identifier, supplementaryViewNibs.get(identifier));
-		}
-					
-		this.getExtVars().setSupplementaryViewsExternalObjects(supplementaryViewExternalObjects);
+	protected String toStringExtra() {
+		return String.format("%s; collection view layout: %s", super.toStringExtra(), this.getCollectionViewLayout());
 	}
 
-	void awakeFromNib() {
-		super.awakeFromNib();
-
-		CollectionViewLayout nibLayout = this.getExtVars().getNibLayout();
-		if (nibLayout) {
-		    this.setCollectionViewLayout(nibLayout);
-		    this.getExtVars().setNibLayout(null);
-		}
-	}
-
-	String description() {
-		return String.format("%s collection view layout: %s", super.description(), this.getCollectionViewLayout());
-	}
-
-	void layoutSubviews() {
+	public void layoutSubviews() {
 		super.layoutSubviews();
 
 		// Adding alpha animation to make the relayouting smooth
@@ -841,7 +803,7 @@ public class CollectionView extends mocha.ui.ScrollView implements mocha.ui.Scro
 		_collectionViewFlags.doneFirstLayout = true;
 	}
 
-	void setFrame(mocha.graphics.Rect frame) {
+	public void setFrame(mocha.graphics.Rect frame) {
 		if (!frame.equals(this.getFrame())) {
 		    mocha.graphics.Rect bounds = new mocha.graphics.Rect(this.getContentOffset(), frame.size);
 		    boolean shouldInvalidate = this.getCollectionViewLayout().shouldInvalidateLayoutForBoundsChange(bounds);
@@ -853,7 +815,7 @@ public class CollectionView extends mocha.ui.ScrollView implements mocha.ui.Scro
 		}
 	}
 
-	void setBounds(mocha.graphics.Rect bounds) {
+	public void setBounds(mocha.graphics.Rect bounds) {
 		if (!bounds.equals(this.getBounds())) {
 		    boolean shouldInvalidate = this.getCollectionViewLayout().shouldInvalidateLayoutForBoundsChange(bounds);
 		    super.setBounds(bounds);
@@ -865,7 +827,7 @@ public class CollectionView extends mocha.ui.ScrollView implements mocha.ui.Scro
 	}
 
 	@mocha.foundation.RuntimeMethod
-	public void scrollViewDidScroll(mocha.ui.ScrollView scrollView) {
+	public void didScroll(ScrollView scrollView) {
 		CollectionView.Delegate delegate = this.getExtVars().getCollectionView.Delegate();
 		if ((id)delegate != this && delegate.respondsToSelector("scrollViewDidScroll")) {
 		    delegate.scrollViewDidScroll(scrollView);

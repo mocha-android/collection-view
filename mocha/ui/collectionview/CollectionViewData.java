@@ -1,14 +1,24 @@
+package mocha.ui.collectionview;
+
+import com.android.internal.util.Predicate;
+import mocha.foundation.*;
+import mocha.graphics.Rect;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+
 class CollectionViewData extends MObject {
-	private boolean _layoutIsPrepared;
 	private mocha.graphics.Rect _validLayoutRect;
 	private int _numItems;
 	private int _numSections;
-	private int _sectionItemCounts;
+	private int[] _sectionItemCounts;
 	private mocha.graphics.Size _contentSize;
 	private CollectionViewDataFlagsStruct _collectionViewDataFlags = new CollectionViewDataFlagsStruct();
 	private CollectionView _collectionView;
 	private CollectionViewLayout _layout;
-	private ArrayList _cachedLayoutAttributes;
+	private List<CollectionViewLayout.Attributes> _cachedLayoutAttributes;
 
 	private class CollectionViewDataFlagsStruct {
 		boolean contentSizeIsValid;
@@ -18,8 +28,6 @@ class CollectionViewData extends MObject {
 	}
 
 	public CollectionViewData(CollectionView collectionView, CollectionViewLayout layout) {
-		super.init();
-
 		_collectionView = collectionView;
 		_layout = layout;
 	}
@@ -32,12 +40,11 @@ class CollectionViewData extends MObject {
 		if (!_validLayoutRect.equals(rect)) {
 		    _validLayoutRect = rect;
 		    // we only want cell layoutAttributes & supplementaryView layoutAttributes
-		    this.getCachedLayoutAttributes() = this.getLayout().layoutAttributesForElementsInRect(rect).filteredArrayUsingPredicate(mocha.foundation.Predicate.predicateWithBlock(^boolean(CollectionViewLayout.Attributes *evaluatedObject, HashMap *bindings) {
-		        return (evaluatedObject.isKindOfClass(CollectionViewLayout.Attributes.getClass()) &&
-		                (evaluatedObject.isCell() ||
-		                        evaluatedObject.isSupplementaryView() ||
-		                        evaluatedObject.isDecorationView()));
-		    }));
+			this._cachedLayoutAttributes = Lists.filteredList(this.getLayout().layoutAttributesForElementsInRect(rect), new Lists.Filter<CollectionViewLayout.Attributes>() {
+				public boolean filter(CollectionViewLayout.Attributes item) {
+					return item != null && (item.isCell() || item.isSupplementaryView() || item.isDecorationView());
+				}
+			});
 		}
 	}
 
@@ -46,29 +53,28 @@ class CollectionViewData extends MObject {
 	}
 
 	int globalIndexForItemAtIndexPath(mocha.foundation.IndexPath indexPath) {
-		int offset = this.numberOfItemsBeforeSection(indexPath.section) + indexPath.item;
-		return (int)offset;
+		return this.numberOfItemsBeforeSection(indexPath.section) + indexPath.item;
 	}
 
 	mocha.foundation.IndexPath indexPathForItemAtGlobalIndex(int index) {
 		this.validateItemCounts();
 
-		mocha.foundation.Assert(index < _numItems, "request for index path for global index %ld when there are only %ld items in the collection view", (long)index, (long)_numItems);
+		Assert.condition(index < _numItems, String.format("request for index path for global index %d when there are only %d items in the collection view", index, _numItems));
 
 		int section = 0;
 		int countItems = 0;
 		for (section = 0; section < _numSections; section++) {
-		    int countIncludingThisSection = countItems + _sectionItemCounts.get(section);
+		    int countIncludingThisSection = countItems + _sectionItemCounts[section];
 		    if (countIncludingThisSection > index) break;
 		    countItems = countIncludingThisSection;
 		}
 
 		int item = index - countItems;
 
-		return mocha.foundation.IndexPath.indexPathForItemInSection(item, section);
+		return mocha.foundation.IndexPath.withItemInSection(item, section);
 	}
 
-	ArrayList layoutAttributesForElementsInRect(mocha.graphics.Rect rect) {
+	List<CollectionViewLayout.Attributes> layoutAttributesForElementsInRect(Rect rect) {
 		this.validateLayoutInRect(rect);
 		return this.getCachedLayoutAttributes();
 	}
@@ -76,17 +82,17 @@ class CollectionViewData extends MObject {
 	void invalidate() {
 		_collectionViewDataFlags.itemCountsAreValid = false;
 		_collectionViewDataFlags.layoutIsPrepared = false;
-		_validLayoutRect = mocha.graphics.Rect.nll();  // don't set mocha.graphics.Rect.zero() in case of _contentSize=mocha.graphics.Size.zero()
+		_validLayoutRect = null;  // don't set mocha.graphics.Rect.zero() in case of _contentSize=mocha.graphics.Size.zero()
 	}
 
 	int numberOfItemsBeforeSection(int section) {
 		this.validateItemCounts();
 
-		mocha.foundation.Assert(section < _numSections, "request for number of items in section %ld when there are only %ld sections in the collection view", (long)section, (long)_numSections);
+		Assert.condition(section < _numSections, String.format("request for number of items in section %d when there are only %d sections in the collection view", section, _numSections));
 
 		int returnCount = 0;
 		for (int i = 0; i < section; i++) {
-		    returnCount += _sectionItemCounts.get(i);
+		    returnCount += _sectionItemCounts[i];
 		}
 
 		return returnCount;
@@ -103,8 +109,8 @@ class CollectionViewData extends MObject {
 		}
 
 		int numberOfItemsInSection = 0;
-		if (_sectionItemCounts) {
-		    numberOfItemsInSection = _sectionItemCounts.get(section);
+		if (_sectionItemCounts != null) {
+		    numberOfItemsInSection = _sectionItemCounts[section];
 		}
 		return numberOfItemsInSection;
 	}
@@ -124,20 +130,15 @@ class CollectionViewData extends MObject {
 	}
 
 	void prepareToLoadData() {
-		if (!this.getLayoutIsPrepared()) {
+		if (!this.layoutIsPrepared()) {
 		    this.getLayout().prepareLayout();
-		    _contentSize = this.getLayout().getCollectionViewContentSize();
+		    _contentSize = this.getLayout().collectionViewContentSize().copy();
 		    this.setLayoutIsPrepared(true);
 		}
 	}
 
-	protected void finalize() throws java.lang.Throwable {
-		free(_sectionItemCounts);
-		super.finalize();
-	}
-
-	String description() {
-		return String.format("<%s: %p numItems:%ld numSections:%ld>", StringFromClass(this.getClass()), this, (long)this.getNumberOfItems(), (long)this.getNumberOfSections());
+	protected String toStringExtra() {
+		return String.format("numItems:%d numSections:%d", this.numberOfItems(), this.numberOfSections());
 	}
 
 	boolean layoutIsPrepared() {
@@ -157,28 +158,25 @@ class CollectionViewData extends MObject {
 	void updateItemCounts() {
 		// query how many sections there will be
 		_numSections = 1;
-		if (this.getCollectionView().getDataSource().respondsToSelector("numberOfSectionsInCollectionView")) {
+
+		if (OptionalInterfaceHelper.hasImplemented(this.getCollectionView().getDataSource(), "numberOfSectionsInCollectionView", CollectionView.class)) {
 		    _numSections = this.getCollectionView().getDataSource().numberOfSectionsInCollectionView(this.getCollectionView());
 		}
+
 		if (_numSections <= 0) { // early bail-out
 		    _numItems = 0;
-		    free(_sectionItemCounts);
-		    _sectionItemCounts = 0;
+		    _sectionItemCounts = null;
 		    _collectionViewDataFlags.itemCountsAreValid = true;
 		    return;
 		}
-		// allocate space
-		if (!_sectionItemCounts) {
-		    _sectionItemCounts = malloc(_numSections * sizeof(int));
-		}else {
-		    _sectionItemCounts = realloc(_sectionItemCounts, _numSections * sizeof(int));
-		}
+
+		_sectionItemCounts = new int[_numItems];
 
 		// query cells per section
 		_numItems = 0;
-		for (int i = 0; i < _numSections; i++) {
-		    int cellCount = this.getCollectionView().getDataSource().collectionViewNumberOfItemsInSection(this.getCollectionView(), i);
-		    new _sectionItemCounts(i, cellCount);
+		for (int section = 0; section < _numSections; section++) {
+		    int cellCount = this.getCollectionView().getDataSource().collectionViewNumberOfItemsInSection(this.getCollectionView(), section);
+		    _sectionItemCounts[section] = cellCount;
 		    _numItems += cellCount;
 		}
 
@@ -204,12 +202,20 @@ class CollectionViewData extends MObject {
 		this._layout = layout;
 	}
 
-	private ArrayList getCachedLayoutAttributes() {
+	private List<CollectionViewLayout.Attributes> getCachedLayoutAttributes() {
 		return this._cachedLayoutAttributes;
 	}
 
-	private void setCachedLayoutAttributes(ArrayList cachedLayoutAttributes) {
-		this._cachedLayoutAttributes = cachedLayoutAttributes;
+	private void setCachedLayoutAttributes(List<CollectionViewLayout.Attributes> cachedLayoutAttributes) {
+		if(this._cachedLayoutAttributes == null) {
+			this._cachedLayoutAttributes = new ArrayList<>();
+		} else {
+			this._cachedLayoutAttributes.clear();
+		}
+
+		if(cachedLayoutAttributes != null) {
+			this._cachedLayoutAttributes.addAll(cachedLayoutAttributes);
+		}
 	}
 
 }

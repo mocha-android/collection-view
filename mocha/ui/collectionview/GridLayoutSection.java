@@ -3,10 +3,7 @@ package mocha.ui.collectionview;
 import mocha.foundation.Assert;
 import mocha.foundation.MObject;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 class GridLayoutSection extends MObject {
 	private List<GridLayoutItem> _items;
@@ -23,7 +20,7 @@ class GridLayoutSection extends MObject {
 	private float _headerDimension;
 	private float _footerDimension;
 	private GridLayoutInfo _layoutInfo;
-	private HashMap _rowAlignmentOptions;
+	private Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> _rowAlignmentOptions;
 	private float _otherMargin;
 	private float _beginMargin;
 	private float _endMargin;
@@ -191,8 +188,9 @@ class GridLayoutSection extends MObject {
 	}
 
 	public GridLayoutSection() {
-		_items = new ArrayList<GridLayoutItem>();
-		_rows = new ArrayList<GridLayoutRow>();
+		this._items = new ArrayList<>();
+		this._rows = new ArrayList<>();
+		this._rowAlignmentOptions = new HashMap<>();
 	}
 
 	protected String toStringExtra() {
@@ -366,12 +364,16 @@ class GridLayoutSection extends MObject {
 		this._layoutInfo = layoutInfo;
 	}
 
-	public HashMap getRowAlignmentOptions() {
+	public Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> getRowAlignmentOptions() {
 		return this._rowAlignmentOptions;
 	}
 
-	public void setRowAlignmentOptions(HashMap rowAlignmentOptions) {
-		this._rowAlignmentOptions = rowAlignmentOptions;
+	public void setRowAlignmentOptions(Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> rowAlignmentOptions) {
+		this._rowAlignmentOptions.clear();
+
+		if(rowAlignmentOptions != null) {
+			this._rowAlignmentOptions.putAll(rowAlignmentOptions);
+		}
 	}
 
 	public float getOtherMargin() {

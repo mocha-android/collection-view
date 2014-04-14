@@ -5,10 +5,11 @@ import mocha.foundation.MObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 class GridLayoutInfo extends MObject {
 	private List<GridLayoutSection> sections;
-	private HashMap rowAlignmentOptions;
+	private Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> rowAlignmentOptions;
 	private boolean usesFloatingHeaderFooter;
 	private float dimension;
 	private boolean horizontal;
@@ -32,7 +33,7 @@ class GridLayoutInfo extends MObject {
 		return itemFrame.copy();
 	}
 
-	Object addSection() {
+	GridLayoutSection addSection() {
 		GridLayoutSection section = new GridLayoutSection();
 		section.setRowAlignmentOptions(this.getRowAlignmentOptions());
 		section.setLayoutInfo(this);
@@ -58,7 +59,8 @@ class GridLayoutInfo extends MObject {
 	}
 
 	public GridLayoutInfo() {
-		sections = new ArrayList<GridLayoutSection>();
+		this.sections = new ArrayList<>();
+		this.rowAlignmentOptions = new HashMap<>();
 	}
 
 
@@ -81,12 +83,16 @@ class GridLayoutInfo extends MObject {
 		}
 	}
 
-	public HashMap getRowAlignmentOptions() {
+	public Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> getRowAlignmentOptions() {
 		return this.rowAlignmentOptions;
 	}
 
-	public void setRowAlignmentOptions(HashMap rowAlignmentOptions) {
-		this.rowAlignmentOptions = rowAlignmentOptions;
+	public void setRowAlignmentOptions(Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> rowAlignmentOptions) {
+		this.rowAlignmentOptions.clear();
+
+		if(rowAlignmentOptions != null) {
+			this.rowAlignmentOptions.putAll(rowAlignmentOptions);
+		}
 	}
 
 	public boolean getUsesFloatingHeaderFooter() {

@@ -3,13 +3,13 @@ package mocha.ui.collectionview;
 import mocha.foundation.MObject;
 
 class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<CollectionViewItemKey> {
-	static final String ELEMENT_KIND_CELL = "UICollectionElementKindCell";
+	static final String ELEMENT_KIND_CELL = "ELEMENT_KIND_CELL";
 
-	private CollectionViewLayout.CollectionViewItemType _type;
-	private mocha.foundation.IndexPath _indexPath;
-	private String _identifier;
+	private CollectionViewLayout.CollectionViewItemType type;
+	private mocha.foundation.IndexPath indexPath;
+	private String identifier;
 
-	static CollectionViewItemKey collectionItemKeyForLayoutAttributes(CollectionViewLayout.Attributes layoutAttributes) {
+	public static CollectionViewItemKey collectionItemKeyForLayoutAttributes(CollectionViewLayout.Attributes layoutAttributes) {
 		CollectionViewItemKey key = new CollectionViewItemKey();
 		key.setIndexPath(layoutAttributes.getIndexPath());
 		key.setType(layoutAttributes.getRepresentedElementCategory());
@@ -17,7 +17,7 @@ class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<
 		return key;
 	}
 
-	static CollectionViewItemKey collectionItemKeyForCellWithIndexPath(mocha.foundation.IndexPath indexPath) {
+	public static CollectionViewItemKey collectionItemKeyForCellWithIndexPath(mocha.foundation.IndexPath indexPath) {
 		CollectionViewItemKey key = new CollectionViewItemKey();
 		key.setIndexPath(indexPath);
 		key.setType(CollectionViewLayout.CollectionViewItemType.CELL);
@@ -26,36 +26,35 @@ class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<
 	}
 
 	protected String toStringExtra() {
-		return String.format("Type = %s Identifier=%s IndexPath = %s", CollectionViewLayout.CollectionViewItemTypeToString(this.getType()), _identifier, this.getIndexPath());
+		return String.format("Type = %s; Identifier = %s; IndexPath = %s", this.type, this.identifier, this.indexPath);
 	}
 
 	public int hashCode() {
-		return ((_indexPath.hashCode() + _type) * 31) + _identifier.hashCode();
+		return ((this.indexPath.hashCode() + this.type.hashCode()) * 31) + this.identifier.hashCode();
 	}
 
 	public boolean equals(Object other) {
 		if(other instanceof CollectionViewItemKey) {
-		    CollectionViewItemKey otherKeyItem = (CollectionViewItemKey)other;
-		    // identifier might be null?
-		    if (_type == otherKeyItem.getType() && _indexPath.equals(otherKeyItem.getIndexPath()) && (_identifier.equals(otherKeyItem.getIdentifier()) || _identifier.equals(otherKeyItem.getIdentifier()))) {
-		        return true;
+		    CollectionViewItemKey otherItemKey = (CollectionViewItemKey)other;
+
+		    if (this.type == otherItemKey.type && this.indexPath.equals(otherItemKey.indexPath)) {
+				if(this.identifier != null && otherItemKey.identifier != null) {
+					return this.identifier.equals(otherItemKey.identifier);
+				} else {
+					return this.identifier == null && otherItemKey.identifier == null;
+				}
 		    }
 		}
+
 		return false;
 	}
 
 	public CollectionViewItemKey copy() {
-		CollectionViewItemKey itemKey;
+		CollectionViewItemKey itemKey = new CollectionViewItemKey();
 
-		try {
-			itemKey = this.getClass().newInstance();
-		} catch(Exception e) {
-			throw new RuntimeException(e);
-		}
-
-		itemKey.setIndexPath(this.getIndexPath());
-		itemKey.setType(this.getType());
-		itemKey.setIdentifier(this.getIdentifier());
+		itemKey.setIndexPath(this.indexPath);
+		itemKey.setType(this.type);
+		itemKey.setIdentifier(this.identifier);
 
 		return itemKey;
 	}
@@ -64,27 +63,27 @@ class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<
 	/* ========================================== */
 
 	public CollectionViewLayout.CollectionViewItemType getType() {
-		return this._type;
+		return this.type;
 	}
 
 	public void setType(CollectionViewLayout.CollectionViewItemType type) {
-		this._type = type;
+		this.type = type;
 	}
 
 	public mocha.foundation.IndexPath getIndexPath() {
-		return this._indexPath;
+		return this.indexPath;
 	}
 
 	public void setIndexPath(mocha.foundation.IndexPath indexPath) {
-		this._indexPath = indexPath;
+		this.indexPath = indexPath;
 	}
 
 	public String getIdentifier() {
-		return this._identifier;
+		return this.identifier;
 	}
 
 	public void setIdentifier(String identifier) {
-		this._identifier = identifier;
+		this.identifier = identifier;
 	}
 
 }

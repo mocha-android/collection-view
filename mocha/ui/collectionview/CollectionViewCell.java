@@ -1,17 +1,18 @@
 package mocha.ui.collectionview;
 
+import mocha.graphics.Rect;
+import mocha.ui.Highlightable;
+import mocha.ui.LongPressGestureRecognizer;
 import mocha.ui.View;
 
-class CollectionViewCell extends CollectionReusableView {
-	private mocha.ui.View _contentView;
-	private boolean _selected;
-	private boolean _highlighted;
-	private mocha.ui.View _backgroundView;
-	private mocha.ui.View _selectedBackgroundView;
-	private mocha.ui.LongPressGestureRecognizer _menuGesture;
-	private Object _selectionSegueTemplate;
-	private Object _highlightingSupport;
-	private CollectionCellFlagsStruct _collectionCellFlags = new CollectionCellFlagsStruct();
+import java.util.List;
+
+class CollectionViewCell extends CollectionReusableView implements Highlightable {
+	private View contentView;
+	private View backgroundView;
+	private View selectedBackgroundView;
+	private LongPressGestureRecognizer menuGesture;
+	private CollectionCellFlagsStruct collectionCellFlags = new CollectionCellFlagsStruct();
 
 	private class CollectionCellFlagsStruct {
 		boolean selected;
@@ -19,165 +20,128 @@ class CollectionViewCell extends CollectionReusableView {
 		boolean showingMenu;
 		boolean clearSelectionWhenMenuDisappears;
 		boolean waitingForSelectionAnimationHalfwayPoint;
-
 	}
 
 	public CollectionViewCell(mocha.graphics.Rect frame) {
 		super(frame);
 
-		_backgroundView = new mocha.ui.View(this.getBounds());
-		_backgroundView.setAutoresizing(View.Autoresizing.FLEXIBLE_HEIGHT, View.Autoresizing.FLEXIBLE_WIDTH);
-		this.addSubview(_backgroundView);
-					
-		_contentView = new mocha.ui.View(this.getBounds());
-		_contentView.setAutoresizing(View.Autoresizing.FLEXIBLE_HEIGHT, View.Autoresizing.FLEXIBLE_WIDTH);
-		this.addSubview(_contentView);
-					
-		_menuGesture = new mocha.ui.LongPressGestureRecognizer(this, "menuGesture");
+		Rect bounds = this.getBounds();
+
+		this.backgroundView = new View(bounds);
+		this.backgroundView.setAutoresizing(Autoresizing.FLEXIBLE_WIDTH, Autoresizing.FLEXIBLE_HEIGHT);
+		this.addSubview(this.backgroundView);
+
+		this.contentView = new View(bounds);
+		this.contentView.setAutoresizing(Autoresizing.FLEXIBLE_WIDTH, Autoresizing.FLEXIBLE_HEIGHT);
+		this.addSubview(this.contentView);
+
+//		this.menuGesture = new mocha.ui.LongPressGestureRecognizer(new GestureRecognizer.GestureHandler() {
+//			public void handleGesture(GestureRecognizer gestureRecognizer) {
+//				menuGesture((LongPressGestureRecognizer)gestureRecognizer);
+//			}
+//		});
 	}
 
-	void prepareForReuse() {
+	public void prepareForReuse() {
 		this.setLayoutAttributes(null);
 		this.setSelected(false);
 		this.setHighlighted(false);
-		this.setAccessibilityTraits(mocha.ui.AccessibilityTraitNone);
+		this.setAccessibilityTraits(Trait.NONE);
 	}
 
-	void setSelected(boolean selected) {
-		_collectionCellFlags.selected = selected;
-		this.setAccessibilityTraits(selected ? mocha.ui.AccessibilityTraitSelected : mocha.ui.AccessibilityTraitNone);
-		this.updateBackgroundView(selected);
-	}
-
-	@mocha.foundation.RuntimeMethod
 	public void setHighlighted(boolean highlighted) {
-		_collectionCellFlags.highlighted = highlighted;
+		this.collectionCellFlags.highlighted = highlighted;
 		this.updateBackgroundView(highlighted);
 	}
 
 	void updateBackgroundView(boolean highlight) {
-		_selectedBackgroundView.setAlpha(highlight ? 1.0f : 0.0f);
+		this.selectedBackgroundView.setAlpha(highlight ? 1.0f : 0.0f);
 		this.setHighlightedForViews(highlight, this.getContentView().getSubviews());
 	}
 
-	void setHighlightedForViews(boolean highlighted, Object subviews) {
-		for (id view in subviews) {
-		    // Ignore the events if view wants to
-		    if (!((mocha.ui.View)view).getIsUserInteractionEnabled() &&
-		            view.respondsToSelector("setHighlighted") &&
-		            !view.isK : dOfClass(mocha.ui.Control.getClass())) {
-		        view.setHighlighted(highlighted);
-
-		        this.setHighlightedForViews(highlighted, view.subviews());
-		    }
+	void setHighlightedForViews(boolean highlighted, List<View> subviews) {
+		for (View view : subviews) {
+			// Ignore the events if view wants to
+			if (!view.isUserInteractionEnabled() && view instanceof Highlightable && !(view instanceof mocha.ui.Control)) {
+				((Highlightable) view).setHighlighted(highlighted);
+				this.setHighlightedForViews(highlighted, view.getSubviews());
+			}
 		}
 	}
 
-	@mocha.foundation.RuntimeMethod
-	public void menuGesture(mocha.ui.LongPressGestureRecognizer recognizer) {
-		MLog("Not yet implemented: %s", StringFromSelector(_cmd));
+	private void menuGesture(LongPressGestureRecognizer recognizer) {
+
 	}
 
-	void setBackgroundView(mocha.ui.View backgroundView) {
-		if (_backgroundView != backgroundView) {
-		    _backgroundView.removeFromSuperview();
-		    _backgroundView = backgroundView;
-		    _backgroundView.setFrame(this.getBounds());
-		    _backgroundView.setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
-		    this.insertSubviewAtIndex(_backgroundView, 0);
+	public void setBackgroundView(View backgroundView) {
+		if (this.backgroundView != backgroundView) {
+			if (this.backgroundView != null) {
+				this.backgroundView.removeFromSuperview();
+			}
+
+			this.backgroundView = backgroundView;
+
+			if (this.backgroundView != null) {
+				this.backgroundView.setFrame(this.getBounds());
+				this.backgroundView.setAutoresizing(Autoresizing.FLEXIBLE_WIDTH, Autoresizing.FLEXIBLE_HEIGHT);
+				this.insertSubview(this.backgroundView, 0);
+			}
 		}
 	}
 
-	void setSelectedBackgroundView(mocha.ui.View selectedBackgroundView) {
-		if (_selectedBackgroundView != selectedBackgroundView) {
-		    _selectedBackgroundView.removeFromSuperview();
-		    _selectedBackgroundView = selectedBackgroundView;
-		    _selectedBackgroundView.setFrame(this.getBounds());
-		    _selectedBackgroundView.setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
-		    _selectedBackgroundView.setAlpha(this.getSelected() ? 1.0f : 0.0f);
-		    if (_backgroundView) {
-		        this.insertSubviewAboveSubview(_selectedBackgroundView, _backgroundView);
-		    }
-		    else {
-		        this.insertSubviewAtIndex(_selectedBackgroundView, 0);
-		    }
-		}
-	}
+	public void setSelectedBackgroundView(View selectedBackgroundView) {
+		if (this.selectedBackgroundView != selectedBackgroundView) {
+			if (this.selectedBackgroundView != null) {
+				this.selectedBackgroundView.removeFromSuperview();
+			}
 
-	boolean isSelected() {
-		return _collectionCellFlags.selected;
-	}
+			this.selectedBackgroundView = selectedBackgroundView;
 
-	boolean isHighlighted() {
-		return _collectionCellFlags.highlighted;
-	}
+			if (this.selectedBackgroundView != null) {
+				this.selectedBackgroundView.setFrame(this.getBounds());
+				this.selectedBackgroundView.setAutoresizing(Autoresizing.FLEXIBLE_WIDTH, Autoresizing.FLEXIBLE_HEIGHT);
+				this.selectedBackgroundView.setAlpha(this.isSelected() ? 1.0f : 0.0f);
 
-	mocha.foundation.MethodSignature methodSignatureForSelector(SEL selector) {
-		mocha.foundation.MethodSignature sig = super.methodSignatureForSelector(selector);
-		if(!sig) {
-		    String selString = StringFromSelector(selector);
-		    if (selString.hasPrefix("_")) {
-		        SEL cleanedSelector = mocha.foundation.SelectorFromString(selString.substringFromIndex(1));
-		        sig = super.methodSignatureForSelector(cleanedSelector);
-		    }
-		}
-		return sig;
-	}
-
-	void forwardInvocation(mocha.foundation.Invocation inv) {
-		String selString = StringFromSelector(inv.selector());
-		if (selString.hasPrefix("_")) {
-		    SEL cleanedSelector = mocha.foundation.SelectorFromString(selString.substringFromIndex(1));
-		    if (this.respondsToSelector(cleanedSelector)) {
-		        inv.setSelector(cleanedSelector);
-		        inv.invokeWithTarget(this);
-		    }
-		}else {
-		    super.forwardInvocation(inv);
+				if (this.backgroundView != null) {
+					this.insertSubviewAboveSubview(this.selectedBackgroundView, this.backgroundView);
+				} else {
+					this.insertSubview(this.selectedBackgroundView, 0);
+				}
+			}
 		}
 	}
 
 	/* Setters & Getters */
 	/* ========================================== */
 
-	public mocha.ui.View getContentView() {
-		return this._contentView;
+	public View getContentView() {
+		return this.contentView;
 	}
 
-	public void setContentView(mocha.ui.View contentView) {
-		this._contentView = contentView;
+	public void setContentView(View contentView) {
+		this.contentView = contentView;
 	}
 
-	public boolean getSelected() {
-		return this._selected;
+	public boolean isSelected() {
+		return this.collectionCellFlags.selected;
 	}
 
 	public void setSelected(boolean selected) {
-		this._selected = selected;
+		this.collectionCellFlags.selected = selected;
+		this.setAccessibilityTraits(selected ? Trait.SELECTED : Trait.NONE);
+		this.updateBackgroundView(selected);
 	}
 
-	public boolean getHighlighted() {
-		return this._highlighted;
+	public boolean isHighlighted() {
+		return collectionCellFlags.highlighted;
 	}
 
-	public void setHighlighted(boolean highlighted) {
-		this._highlighted = highlighted;
+	public View getBackgroundView() {
+		return this.backgroundView;
 	}
 
-	public mocha.ui.View getBackgroundView() {
-		return this._backgroundView;
-	}
-
-	public void setBackgroundView(mocha.ui.View backgroundView) {
-		this._backgroundView = backgroundView;
-	}
-
-	public mocha.ui.View getSelectedBackgroundView() {
-		return this._selectedBackgroundView;
-	}
-
-	public void setSelectedBackgroundView(mocha.ui.View selectedBackgroundView) {
-		this._selectedBackgroundView = selectedBackgroundView;
+	public View getSelectedBackgroundView() {
+		return this.selectedBackgroundView;
 	}
 
 }

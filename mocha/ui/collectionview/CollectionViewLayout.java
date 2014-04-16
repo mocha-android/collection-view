@@ -1,23 +1,21 @@
 package mocha.ui.collectionview;
 
+import mocha.foundation.IndexSet;
 import mocha.foundation.MObject;
 import mocha.graphics.AffineTransform;
 import mocha.graphics.Rect;
 import mocha.graphics.Size;
-import mocha.ui.View;
 
 import java.io.Serializable;
 import java.util.*;
 
 abstract public class CollectionViewLayout extends MObject implements Serializable {
 	private CollectionView _collectionView;
-	private Map<String,Class<? extends View>> _decorationViewClassDict;
-	private HashMap _decorationViewExternalObjectsTables;
-	private mocha.graphics.Size _collectionViewBoundsSize;
+	private Map<String,Class<? extends CollectionReusableView>> _decorationViewClassDict;
 	private Map<CollectionViewItemKey,Attributes> _initialAnimationLayoutAttributesDict;
 	private Map<CollectionViewItemKey,Attributes> _finalAnimationLayoutAttributesDict;
-	private Set<Integer> _deletedSectionsSet;
-	private Set<Integer> _insertedSectionsSet;
+	private IndexSet _deletedSectionsSet;
+	private IndexSet _insertedSectionsSet;
 
 	public static class Attributes extends MObject implements mocha.foundation.Copying<Attributes> {
 		private mocha.graphics.Rect _frame;
@@ -122,7 +120,7 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 			if(other == this) {
 				return true;
 			} else if(this.getClass().isAssignableFrom(other.getClass())) {
-			    CollectionViewLayout.Attributes otherLayoutAttributes = (CollectionViewLayout.Attributes)other;
+			    Attributes otherLayoutAttributes = (Attributes)other;
 			    if (_elementCategory == otherLayoutAttributes.getElementCategory() && _elementKind.equals(otherLayoutAttributes.getElementKind()) && _indexPath.equals(otherLayoutAttributes.getIndexPath())) {
 			        return true;
 			    }
@@ -135,19 +133,19 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 			return String.format("frame:%s indexPath:%s elementKind:%s", this.getFrame(), this.getIndexPath(), this.getElementKind());
 		}
 
-		CollectionViewLayout.CollectionViewItemType representedElementCategory() {
+		public CollectionViewLayout.CollectionViewItemType representedElementCategory() {
 			return _elementCategory;
 		}
 
-		String representedElementKind() {
+		public String representedElementKind() {
 			return this.getElementKind();
 		}
 
-		void updateFrame() {
+		private void updateFrame() {
 			_frame = new mocha.graphics.Rect(_center.x - _size.width / 2, _center.y - _size.height / 2, _size.width, _size.height);
 		}
 
-		void setFrame(mocha.graphics.Rect frame) {
+		public void setFrame(mocha.graphics.Rect frame) {
 			if(this._frame != null) {
 				this._frame = frame.copy();
 			} else {
@@ -159,7 +157,8 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		}
 
 		public Attributes copy() {
-			Attributes layoutAttributes = null;
+			Attributes layoutAttributes;
+
 			try {
 				layoutAttributes = this.getClass().newInstance();
 			} catch (InstantiationException | IllegalAccessException e) {
@@ -269,23 +268,23 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 			return this._elementKind;
 		}
 
-		void setElementKind(String elementKind) {
+		private void setElementKind(String elementKind) {
 			this._elementKind = elementKind;
 		}
 
-		String getRepresentedElementKind() {
+		public String getRepresentedElementKind() {
 			return this._representedElementKind;
 		}
 
-		void setRepresentedElementKind(String representedElementKind) {
+		private void setRepresentedElementKind(String representedElementKind) {
 			this._representedElementKind = representedElementKind;
 		}
 
-		CollectionViewLayout.CollectionViewItemType getRepresentedElementCategory() {
+		public CollectionViewLayout.CollectionViewItemType getRepresentedElementCategory() {
 			return this._representedElementCategory;
 		}
 
-		void setRepresentedElementCategory(CollectionViewLayout.CollectionViewItemType representedElementCategory) {
+		private void setRepresentedElementCategory(CollectionViewLayout.CollectionViewItemType representedElementCategory) {
 			this._representedElementCategory = representedElementCategory;
 		}
 
@@ -305,17 +304,25 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		DECORATION_VIEW
 	}
 
+	public CollectionViewLayout() {
+		_decorationViewClassDict = new HashMap<>();
+		_initialAnimationLayoutAttributesDict = new HashMap<>();
+		_finalAnimationLayoutAttributesDict = new HashMap<>();
+		_insertedSectionsSet = new IndexSet();
+		_deletedSectionsSet = new IndexSet();
+	}
+
 	public void invalidateLayout() {
-		_collectionView.collectionViewData().invalidate();
-		_collectionView.setNeedsLayout();
+		this._collectionView.collectionViewData().invalidate();
+		this._collectionView.setNeedsLayout();
 	}
 
-	public void registerClassForDecorationViewOfKind(Class<? extends View> viewClass, String kind) {
-		_decorationViewClassDict.put(kind, viewClass);
+	public void registerClassForDecorationViewOfKind(Class<? extends CollectionReusableView> viewClass, String kind) {
+		this._decorationViewClassDict.put(kind, viewClass);
 	}
 
-	public Class<? extends CollectionViewLayout.Attributes> layoutAttributesClass() {
-		return CollectionViewLayout.Attributes.class;
+	public Class<? extends Attributes> layoutAttributesClass() {
+		return Attributes.class;
 	}
 
 	public void collectionViewDelegateDidChange() {
@@ -326,11 +333,11 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 
 	abstract public List<Attributes> layoutAttributesForElementsInRect(mocha.graphics.Rect rect);
 
-	abstract public CollectionViewLayout.Attributes layoutAttributesForItemAtIndexPath(mocha.foundation.IndexPath indexPath);
+	abstract public Attributes layoutAttributesForItemAtIndexPath(mocha.foundation.IndexPath indexPath);
 
-	abstract public CollectionViewLayout.Attributes layoutAttributesForSupplementaryViewOfKindAtIndexPath(String kind, mocha.foundation.IndexPath indexPath);
+	abstract public Attributes layoutAttributesForSupplementaryViewOfKindAtIndexPath(String kind, mocha.foundation.IndexPath indexPath);
 
-	abstract public CollectionViewLayout.Attributes layoutAttributesForDecorationViewOfKindAtIndexPath(String kind, mocha.foundation.IndexPath indexPath);
+	abstract public Attributes layoutAttributesForDecorationViewOfKindAtIndexPath(String kind, mocha.foundation.IndexPath indexPath);
 
 	public boolean shouldInvalidateLayoutForBoundsChange(mocha.graphics.Rect newBounds) {
 		// not sure about his..
@@ -344,58 +351,63 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 
 	abstract public mocha.graphics.Size collectionViewContentSize();
 
-	public void prepareForCollectionViewUpdates(ArrayList updateItems) {
-		HashMap update = _collectionView.currentUpdate();
+	public void prepareForCollectionViewUpdates(List<CollectionViewUpdateItem> updateItems) {
+		CollectionView.UpdateTransaction update = _collectionView.currentUpdate();
 
-		for (CollectionReusableView view  : _collectionView.visibleViewsDict().objectEnumerator()) {
-		    CollectionViewLayout.Attributes attr = view.getLayoutAttributes().copy();
-		    if (attr) {
-		        if (attr.getIsCell()) {
-		            int index = update.get("oldModel").globalIndexForItemAtIndexPath(attr.indexPath());
-		            if (index != mocha.foundation.NotFound) {
-		                attr.setIndexPath(attr.indexPath());
+		for (CollectionReusableView view  : _collectionView.visibleViewsDict().values()) {
+		    Attributes attr = view.getLayoutAttributes();
+
+		    if (attr != null) {
+				attr = attr.copy();
+
+		        if (attr.isCell()) {
+		            int index = update.oldModel.globalIndexForItemAtIndexPath(attr.getIndexPath());
+
+		            if (index != -1) {
+		                attr.setIndexPath(attr.getIndexPath());
 		            }
 		        }
-		        _initialAnimationLayoutAttributesDict.put(CollectionViewItemKey.collectionItemKeyForLayoutAttributes(attr), attr);
+
+		        this._initialAnimationLayoutAttributesDict.put(CollectionViewItemKey.collectionItemKeyForLayoutAttributes(attr), attr);
 		    }
 		}
 
 		CollectionViewData collectionViewData = _collectionView.collectionViewData();
 
-		mocha.graphics.Rect bounds = _collectionView.visibleBoundRects();
+		Rect bounds = _collectionView.visibleBoundRects();
 
-		for (CollectionViewLayout.Attributes attr  : collectionViewData.layoutAttributesForElementsInRect(bounds)) {
+		for (Attributes attr  : collectionViewData.layoutAttributesForElementsInRect(bounds)) {
 		    if (attr.isCell()) {
 		        int index = collectionViewData.globalIndexForItemAtIndexPath(attr.getIndexPath());
 
-		        index = update.get("newToOldIndexMap").get(index).intValue();
-		        if (index != mocha.foundation.NotFound) {
-		            CollectionViewLayout.Attributes finalAttrs = attr.copy();
-		            finalAttrs.setIndexPath(update.get("oldModel").indexPathForItemAtGlobalIndex(index));
+		        index = update.newToOldIndexMap.get(index);
+		        if (index != -1) {
+		            Attributes finalAttrs = attr.copy();
+		            finalAttrs.setIndexPath(update.oldModel.indexPathForItemAtGlobalIndex(index));
 		            finalAttrs.setAlpha(0);
 		            _finalAnimationLayoutAttributesDict.put(CollectionViewItemKey.collectionItemKeyForLayoutAttributes(finalAttrs), finalAttrs);
 		        }
 		    }
 		}
 
-		for (CollectionViewUpdateItem updateItem  : updateItems) {
-		    CollectionViewUpdateItem.CollectionUpdateAction action = updateItem.getUpdateAction();
+		for (CollectionViewUpdateItem updateItem : updateItems) {
+		    CollectionViewUpdateItem.CollectionUpdateAction action = updateItem.updateAction();
 
 		    if (updateItem.isSectionOperation()) {
 		        if (action == CollectionViewUpdateItem.CollectionUpdateAction.RELOAD) {
-		            _deletedSectionsSet.addIndex(updateItem.indexPathBeforeUpdate().section());
-		            _insertedSectionsSet.addIndex(updateItem.indexPathAfterUpdate().getSection());
+		            _deletedSectionsSet.add(updateItem.indexPathBeforeUpdate().section);
+		            _insertedSectionsSet.add(updateItem.indexPathAfterUpdate().section);
 		        }
 		        else {
-		            mocha.foundation.MutableIndexSet indexSet = action == CollectionViewUpdateItem.CollectionUpdateAction.INSERT ? _insertedSectionsSet : _deletedSectionsSet;
-		            indexSet.addIndex(updateItem.indexPath().getSection());
+		            IndexSet indexSet = action == CollectionViewUpdateItem.CollectionUpdateAction.INSERT ? _insertedSectionsSet : _deletedSectionsSet;
+		            indexSet.add(updateItem.indexPath().section);
 		        }
 		    }
 		    else {
 		        if (action == CollectionViewUpdateItem.CollectionUpdateAction.DELETE) {
 		            CollectionViewItemKey key = CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(updateItem.indexPathBeforeUpdate());
 
-		            CollectionViewLayout.Attributes attrs = _finalAnimationLayoutAttributesDict.get(key).copy();
+		            Attributes attrs = _finalAnimationLayoutAttributesDict.get(key).copy();
 
 		            if (attrs != null) {
 		                attrs.setAlpha(0);
@@ -404,7 +416,7 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		        }
 		        else if (action == CollectionViewUpdateItem.CollectionUpdateAction.RELOAD || action == CollectionViewUpdateItem.CollectionUpdateAction.INSERT) {
 		            CollectionViewItemKey key = CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(updateItem.indexPathAfterUpdate());
-		            CollectionViewLayout.Attributes attrs = _initialAnimationLayoutAttributesDict.get(key).copy();
+		            Attributes attrs = _initialAnimationLayoutAttributesDict.get(key).copy();
 
 		            if (attrs != null) {
 		                attrs.setAlpha(0);
@@ -422,8 +434,8 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		_insertedSectionsSet.clear();
 	}
 
-	public CollectionViewLayout.Attributes initialLayoutAttributesForAppearingItemAtIndexPath(mocha.foundation.IndexPath itemIndexPath) {
-		CollectionViewLayout.Attributes attrs = _initialAnimationLayoutAttributesDict.get(CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(itemIndexPath));
+	public Attributes initialLayoutAttributesForAppearingItemAtIndexPath(mocha.foundation.IndexPath itemIndexPath) {
+		Attributes attrs = _initialAnimationLayoutAttributesDict.get(CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(itemIndexPath));
 
 		if (_insertedSectionsSet.contains(itemIndexPath.section)) {
 		    attrs = attrs.copy();
@@ -433,8 +445,8 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		return attrs;
 	}
 
-	public CollectionViewLayout.Attributes finalLayoutAttributesForDisappearingItemAtIndexPath(mocha.foundation.IndexPath itemIndexPath) {
-		CollectionViewLayout.Attributes attrs = _finalAnimationLayoutAttributesDict.get(CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(itemIndexPath));
+	public Attributes finalLayoutAttributesForDisappearingItemAtIndexPath(mocha.foundation.IndexPath itemIndexPath) {
+		Attributes attrs = _finalAnimationLayoutAttributesDict.get(CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(itemIndexPath));
 
 		if (_deletedSectionsSet.contains(itemIndexPath.section)) {
 		    attrs = attrs.copy();
@@ -443,8 +455,8 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		return attrs;
 	}
 
-	public CollectionViewLayout.Attributes initialLayoutAttributesForInsertedSupplementaryElementOfKind(String elementKind, mocha.foundation.IndexPath elementIndexPath) {
-		CollectionViewLayout.Attributes attrs = _initialAnimationLayoutAttributesDict.get(CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(elementIndexPath));
+	public Attributes initialLayoutAttributesForInsertedSupplementaryElementOfKind(String elementKind, mocha.foundation.IndexPath elementIndexPath) {
+		Attributes attrs = _initialAnimationLayoutAttributesDict.get(CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(elementIndexPath));
 
 		if (_insertedSectionsSet.contains(elementIndexPath.section)) {
 		    attrs = attrs.copy();
@@ -454,35 +466,11 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		return attrs;
 	}
 
-	CollectionViewLayout.Attributes finalLayoutAttributesForDeletedSupplementaryElementOfKindAtIndexPath(String elementKind, mocha.foundation.IndexPath elementIndexPath) {
+	Attributes finalLayoutAttributesForDeletedSupplementaryElementOfKindAtIndexPath(String elementKind, mocha.foundation.IndexPath elementIndexPath) {
 		return null;
 	}
 
-	void setCollectionViewBoundsSize(mocha.graphics.Size size) {
-		if(size != null) {
-			_collectionViewBoundsSize = size.copy();
-		} else {
-			_collectionViewBoundsSize = Size.zero();
-		}
-	}
-
 	abstract CollectionReusableView decorationViewForCollectionViewWithReuseIdentifierIndexPath(CollectionView collectionView, String reuseIdentifier, mocha.foundation.IndexPath indexPath);
-
-	public CollectionViewLayout(Rect frame) {
-		super(frame);
-
-		_decorationViewClassDict = new HashMap<>();
-		_decorationViewExternalObjectsTables = new HashMap();
-		_initialAnimationLayoutAttributesDict = new HashMap<>();
-		_finalAnimationLayoutAttributesDict = new HashMap<>();
-		_insertedSectionsSet = new HashSet<>();
-		_deletedSectionsSet = new HashSet<>();
-	}
-
-
-	public CollectionViewLayout() {
-		this(Rect.zero());
-	}
 
 	/* Setters & Getters */
 	/* ========================================== */
@@ -497,20 +485,8 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		}
 	}
 
-	Map<String, Class<? extends View>> getDecorationViewClassDict() {
+	Map<String, Class<? extends CollectionReusableView>> getDecorationViewClassDict() {
 		return this._decorationViewClassDict;
-	}
-
-	void setDecorationViewClassDict(HashMap decorationViewClassDict) {
-		this._decorationViewClassDict = decorationViewClassDict;
-	}
-
-	HashMap getDecorationViewExternalObjectsTables() {
-		return this._decorationViewExternalObjectsTables;
-	}
-
-	void setDecorationViewExternalObjectsTables(HashMap decorationViewExternalObjectsTables) {
-		this._decorationViewExternalObjectsTables = decorationViewExternalObjectsTables;
 	}
 
 }

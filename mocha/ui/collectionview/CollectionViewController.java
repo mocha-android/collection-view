@@ -1,147 +1,132 @@
 package mocha.ui.collectionview;
 
+import mocha.foundation.Assert;
+import mocha.foundation.IndexPath;
 import mocha.ui.View;
 
-public class CollectionViewController extends mocha.ui.ViewController implements CollectionView.Delegate, CollectionView.DataSource {
-	private CollectionView _collectionView;
-	private boolean _clearsSelectionOnViewWillAppear;
-	private CollectionViewLayout _layout;
-	private Character filler;
-	private CollectionViewControllerFlagsStruct _collectionViewControllerFlags = new CollectionViewControllerFlagsStruct();
+import java.util.List;
 
-	private class CollectionViewControllerFlagsStruct {
-		boolean clearsSelectionOnViewWillAppear;
-		boolean appearsFirstTime;
-
-	}
+abstract public class CollectionViewController extends mocha.ui.ViewController implements CollectionView.Delegate, CollectionView.DataSource {
+	private CollectionView collectionView;
+	private boolean clearsSelectionOnViewWillAppear;
+	private boolean appearsFirstTime;
+	private CollectionViewLayout collectionViewLayout;
 
 	public CollectionViewController(CollectionViewLayout layout) {
-		super.init();
+		Assert.condition(layout != null, "CollectionViewController must be created with a valid CollectionViewLayout.");
 
-		this.setLayout(layout);
-		this.setClearsSelectionOnViewWillAppear(true);
-		_collectionViewControllerFlags.appearsFirstTime = true;
+		this.collectionViewLayout = layout;
+		this.clearsSelectionOnViewWillAppear = true;
+		this.appearsFirstTime = true;
 	}
 
-	public CollectionViewController(mocha.foundation.Coder coder) {
-		super.initWithCoder(coder);
-
-		this.setLayout(new CollectionViewFlowLayout());
-		this.setClearsSelectionOnViewWillAppear(true);
-		_collectionViewControllerFlags.appearsFirstTime = true;
-	}
-
-	void loadView() {
+	protected void loadView() {
 		super.loadView();
 
-		// if this is restored from IB, we don't have plain main view.
-		if (this.getView().isKindOfClass(CollectionView.getClass())) {
-		    _collectionView = (CollectionView)this.getView();
-		    this.setView(new mocha.ui.View(this.getView().getBounds()));
-		    this.getCollectionView().setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
-		}
-
-		if (_collectionView.getDelegate() == null) _collectionView.setDelegate(this);
-		if (_collectionView.getDataSource() == null) _collectionView.setDataSource(this);
-
-		// only create the collection view if it is not already created (by IB)
-		if (!_collectionView) {
-		    this.setCollectionView(new CollectionView(this.getView().getBounds(), this.getLayout()));
-		    this.getCollectionView().setDelegate(this);
-		    this.getCollectionView().setDataSource(this);
-		}
+		this.collectionView = new CollectionView(this.getView().getBounds(), this.collectionViewLayout);
+		this.getCollectionView().setDelegate(this);
+		this.getCollectionView().setDataSource(this);
 	}
 
-	void viewDidLoad() {
+	protected void viewDidLoad() {
 		super.viewDidLoad();
 
-		// This seems like a hack, but is needed for real compatibility
-		// There can be implementations of loadView that don't call super and don't set the view, yet it works in mocha.ui.CollectionViewController.
-		if (!this.getIsViewLoaded()) {
-		    this.setView(new mocha.ui.View(mocha.graphics.Rect.zero()));
-		}
-
-		// Attach the view
-		if (this.getView() != this.getCollectionView()) {
-		    this.getView().addSubview(this.getCollectionView());
-		    this.getCollectionView().setFrame(this.getView().getBounds());
-		    this.getCollectionView().setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
-		}
+		this.getView().addSubview(this.getCollectionView());
+		this.getCollectionView().setFrame(this.getView().getBounds());
+		this.getCollectionView().setAutoresizing(View.Autoresizing.FLEXIBLE_SIZE);
 	}
 
-	void viewWillAppear(boolean animated) {
+	public void viewWillAppear(boolean animated) {
 		super.viewWillAppear(animated);
 
-		if (_collectionViewControllerFlags.appearsFirstTime) {
-		    _collectionView.reloadData();
-		    _collectionViewControllerFlags.appearsFirstTime = false;
+		if (this.appearsFirstTime) {
+		    collectionView.reloadData();
+		    this.appearsFirstTime = false;
 		}
 
-		if (_collectionViewControllerFlags.clearsSelectionOnViewWillAppear) {
-		    for (mocha.foundation.IndexPath aIndexPath in _collectionView. : dexPathsForSelectedItems().copy()) {
-		        _collectionView.deselectItemAtIndexPathAnimated(aIndexPath, animated);
-		    }
+		if (this.clearsSelectionOnViewWillAppear) {
+			List<IndexPath> indexPaths = this.collectionView.indexPathsForSelectedItems();
+
+			if(indexPaths.size() > 0) {
+				for(IndexPath indexPath : indexPaths) {
+					this.collectionView.deselectItemAtIndexPathAnimated(indexPath, animated);
+				}
+			}
 		}
 	}
-
-	CollectionView collectionView() {
-		if (!_collectionView) {
-		    _collectionView = new CollectionView(mocha.ui.Screen.getMainScreen().getBounds(), this.getLayout());
-		    _collectionView.setDelegate(this);
-		    _collectionView.setDataSource(this);
-
-		    // If the collection view isn't the main view, add it.
-		    if (this.getIsViewLoaded() && this.getView() != this.getCollectionView()) {
-		        this.getView().addSubview(this.getCollectionView());
-		        this.getCollectionView().setFrame(this.getView().getBounds());
-		        this.getCollectionView().setAutoresizingMask(View.Autoresizing.FLEXIBLE_HEIGHT_MARGIN, View.Autoresizing.FLEXIBLE_WIDTH);
-		    }
-		}
-		return _collectionView;
-	}
-
-	void setClearsSelectionOnViewWillAppear(boolean clearsSelectionOnViewWillAppear) {
-		_collectionViewControllerFlags.clearsSelectionOnViewWillAppear = clearsSelectionOnViewWillAppear;
-	}
-
-	boolean clearsSelectionOnViewWillAppear() {
-		return _collectionViewControllerFlags.clearsSelectionOnViewWillAppear;
-	}
-
-	int collectionViewNumberOfItemsInSection(CollectionView collectionView, int section) {
-		return 0;
-	}
-
-	CollectionViewCell collectionViewCellForItemAtIndexPath(CollectionView collectionView, mocha.foundation.IndexPath indexPath) {
-		this.doesNotRecognizeSelector(_cmd);
-		return null;
-	}
-
-	/* Setters & Getters */
-	/* ========================================== */
 
 	public CollectionView getCollectionView() {
-		return this._collectionView;
-	}
-
-	public void setCollectionView(CollectionView collectionView) {
-		this._collectionView = collectionView;
-	}
-
-	public boolean getClearsSelectionOnViewWillAppear() {
-		return this._clearsSelectionOnViewWillAppear;
+		return this.collectionView;
 	}
 
 	public void setClearsSelectionOnViewWillAppear(boolean clearsSelectionOnViewWillAppear) {
-		this._clearsSelectionOnViewWillAppear = clearsSelectionOnViewWillAppear;
+		this.clearsSelectionOnViewWillAppear = clearsSelectionOnViewWillAppear;
 	}
 
-	private CollectionViewLayout getLayout() {
-		return this._layout;
+	public boolean getClearsSelectionOnViewWillAppear() {
+		return this.clearsSelectionOnViewWillAppear;
 	}
 
-	private void setLayout(CollectionViewLayout layout) {
-		this._layout = layout;
+	public CollectionViewLayout getCollectionViewLayout() {
+		if(this.collectionView != null) {
+			return this.collectionView.getCollectionViewLayout();
+		} else {
+			return this.collectionViewLayout;
+		}
+	}
+
+	public int numberOfSectionsInCollectionView(CollectionView collectionView) {
+		return 1;
+	}
+
+	@NotImplemented
+	public CollectionReusableView collectionViewViewForSupplementaryElementOfKindAtIndexPath(CollectionView collectionView, String kind, IndexPath indexPath) {
+		return null;
+	}
+
+	@NotImplemented
+	public boolean collectionViewShouldHighlightItemAtIndexPath(CollectionView collectionView, IndexPath indexPath) {
+		return false;
+	}
+
+	@NotImplemented
+	public void collectionViewDidHighlightItemAtIndexPath(CollectionView collectionView, IndexPath indexPath) {
+
+	}
+
+	@NotImplemented
+	public void collectionViewDidUnhighlightItemAtIndexPath(CollectionView collectionView, IndexPath indexPath) {
+
+	}
+
+	@NotImplemented
+	public boolean collectionViewShouldSelectItemAtIndexPath(CollectionView collectionView, IndexPath indexPath) {
+		return false;
+	}
+
+	@NotImplemented
+	public boolean collectionViewShouldDeselectItemAtIndexPath(CollectionView collectionView, IndexPath indexPath) {
+		return false;
+	}
+
+	@NotImplemented
+	public void collectionViewDidSelectItemAtIndexPath(CollectionView collectionView, IndexPath indexPath) {
+
+	}
+
+	@NotImplemented
+	public void collectionViewDidDeselectItemAtIndexPath(CollectionView collectionView, IndexPath indexPath) {
+
+	}
+
+	@NotImplemented
+	public void collectionViewDidEndDisplayingCellForItemAtIndexPath(CollectionView collectionView, CollectionViewCell cell, IndexPath indexPath) {
+
+	}
+
+	@NotImplemented
+	public void collectionViewDidEndDisplayingSupplementaryViewForElementOfKindAtIndexPath(CollectionView collectionView, CollectionReusableView view, String elementKind, IndexPath indexPath) {
+
 	}
 
 }

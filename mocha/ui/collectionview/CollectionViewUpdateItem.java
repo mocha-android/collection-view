@@ -43,7 +43,7 @@ class CollectionViewUpdateItem extends MObject implements mocha.foundation.Compa
 		this(oldIndexPath, newIndexPath, CollectionViewUpdateItem.CollectionUpdateAction.MOVE);
 	}
 
-	CollectionViewUpdateItem.CollectionUpdateAction updateAction() {
+	public CollectionViewUpdateItem.CollectionUpdateAction updateAction() {
 		return this.updateAction;
 	}
 
@@ -77,13 +77,13 @@ class CollectionViewUpdateItem extends MObject implements mocha.foundation.Compa
 		}
 	}
 
-	IndexPath indexPath() {
+	public IndexPath indexPath() {
 		//TODO: check this
-		return initialIndexPath;
+		return this.initialIndexPath;
 	}
 
 	boolean isSectionOperation() {
-		return initialIndexPath == null || initialIndexPath.item == -1 || finalIndexPath == null || finalIndexPath.item == -1;
+		return this.initialIndexPath == null || this.initialIndexPath.item == -1 || this.finalIndexPath == null || this.finalIndexPath.item == -1;
 	}
 
 	protected String toStringExtra() {
@@ -116,8 +116,16 @@ class CollectionViewUpdateItem extends MObject implements mocha.foundation.Compa
 		return this.gap;
 	}
 
-	CollectionViewUpdateItem.CollectionUpdateAction action() {
+	public CollectionViewUpdateItem.CollectionUpdateAction action() {
 		return this.updateAction;
+	}
+
+	public IndexPath indexPathBeforeUpdate() {
+		return this.initialIndexPath;
+	}
+
+	public IndexPath indexPathAfterUpdate() {
+		return this.finalIndexPath;
 	}
 
 }

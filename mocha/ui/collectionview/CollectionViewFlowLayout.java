@@ -199,7 +199,7 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 		        normalizedFooterFrame.origin.x += section.getFrame().origin.x;
 		        normalizedFooterFrame.origin.y += section.getFrame().origin.y;
 		        if (!normalizedFooterFrame.empty() && normalizedFooterFrame.intersects(rect)) {
-		            CollectionViewLayout.Attributes layoutAttributes = Attributes.layoutAttributesForSupplementaryViewOfKindWithIndexPath(this.layoutAttributesClass(), PSTCollectionElementKindSectionFooter, mocha.foundation.IndexPath.indexPathForItemInSection(0, sectionIndex));
+		            CollectionViewLayout.Attributes layoutAttributes = Attributes.layoutAttributesForSupplementaryViewOfKindWithIndexPath(this.layoutAttributesClass(), PSTCollectionElementKindSectionFooter, mocha.foundation.IndexPath.withItemInSection(0, sectionIndex));
 		            layoutAttributes.setFrame(normalizedFooterFrame);
 		            layoutAttributesArray.add(layoutAttributes);
 		        }

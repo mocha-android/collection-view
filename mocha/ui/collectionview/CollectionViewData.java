@@ -53,7 +53,11 @@ class CollectionViewData extends MObject {
 	}
 
 	int globalIndexForItemAtIndexPath(mocha.foundation.IndexPath indexPath) {
-		return this.numberOfItemsBeforeSection(indexPath.section) + indexPath.item;
+		return this.globalIndexForItemInSection(indexPath.item, indexPath.section);
+	}
+
+	int globalIndexForItemInSection(int item, int section) {
+		return this.numberOfItemsBeforeSection(section) + item;
 	}
 
 	mocha.foundation.IndexPath indexPathForItemAtGlobalIndex(int index) {

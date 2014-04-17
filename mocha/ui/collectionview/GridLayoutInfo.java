@@ -9,11 +9,11 @@ import java.util.Map;
 
 class GridLayoutInfo extends MObject {
 	private List<GridLayoutSection> sections;
-	private Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> rowAlignmentOptions;
-	private boolean usesFloatingHeaderFooter;
-	private float dimension;
-	private boolean horizontal;
-	private boolean leftToRight;
+	private GridLayoutAlignmentOptions rowAlignmentOptions;
+	public boolean usesFloatingHeaderFooter;
+	public float dimension;
+	public boolean horizontal;
+	public boolean leftToRight;
 	private mocha.graphics.Size contentSize;
 	private mocha.graphics.Rect visibleBounds;
 	private mocha.graphics.Size layoutSize;
@@ -51,21 +51,20 @@ class GridLayoutInfo extends MObject {
 		layoutInfo.setSections(this.getSections());
 		layoutInfo.setRowAlignmentOptions(this.getRowAlignmentOptions());
 		layoutInfo.setUsesFloatingHeaderFooter(this.getUsesFloatingHeaderFooter());
-		layoutInfo.setDimension(this.getDimension());
-		layoutInfo.setHorizontal(this.getHorizontal());
-		layoutInfo.setLeftToRight(this.getLeftToRight());
+		layoutInfo.dimension = this.dimension;
+		layoutInfo.horizontal = this.horizontal;
+		layoutInfo.leftToRight = this.leftToRight;
 		layoutInfo.setContentSize(this.getContentSize());
 		return layoutInfo;
 	}
 
 	public GridLayoutInfo() {
 		this.sections = new ArrayList<>();
-		this.rowAlignmentOptions = new HashMap<>();
 	}
 
 
 	protected String toStringExtra() {
-		return String.format("dimension:%.01f horizontal:%d contentSize:%s sections:%s", this.getDimension(), this.getHorizontal() ? 1 : 0, this.getContentSize(), this.getSections());
+		return String.format("dimension:%.01f horizontal:%d contentSize:%s sections:%s", this.dimension, this.horizontal ? 1 : 0, this.getContentSize(), this.getSections());
 	}
 
 	/* Setters & Getters */
@@ -83,15 +82,15 @@ class GridLayoutInfo extends MObject {
 		}
 	}
 
-	public Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> getRowAlignmentOptions() {
-		return this.rowAlignmentOptions;
+	public GridLayoutAlignmentOptions getRowAlignmentOptions() {
+		return rowAlignmentOptions;
 	}
 
-	public void setRowAlignmentOptions(Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> rowAlignmentOptions) {
-		this.rowAlignmentOptions.clear();
-
-		if(rowAlignmentOptions != null) {
-			this.rowAlignmentOptions.putAll(rowAlignmentOptions);
+	public void setRowAlignmentOptions(GridLayoutAlignmentOptions rowAlignmentOptions) {
+		if(rowAlignmentOptions == null) {
+			this.rowAlignmentOptions = null;
+		} else {
+			this.rowAlignmentOptions = rowAlignmentOptions.copy();
 		}
 	}
 
@@ -101,30 +100,6 @@ class GridLayoutInfo extends MObject {
 
 	public void setUsesFloatingHeaderFooter(boolean usesFloatingHeaderFooter) {
 		this.usesFloatingHeaderFooter = usesFloatingHeaderFooter;
-	}
-
-	public float getDimension() {
-		return this.dimension;
-	}
-
-	public void setDimension(float dimension) {
-		this.dimension = dimension;
-	}
-
-	public boolean getHorizontal() {
-		return this.horizontal;
-	}
-
-	public void setHorizontal(boolean horizontal) {
-		this.horizontal = horizontal;
-	}
-
-	public boolean getLeftToRight() {
-		return this.leftToRight;
-	}
-
-	public void setLeftToRight(boolean leftToRight) {
-		this.leftToRight = leftToRight;
 	}
 
 	public mocha.graphics.Size getContentSize() {

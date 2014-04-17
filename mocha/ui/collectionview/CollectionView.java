@@ -1016,12 +1016,12 @@ public class CollectionView extends ScrollView {
 		    // moving out of bounds
 		    if (
 					this._currentIndexPath.equals(this._touchingIndexPath) &&
-					!indexPath.equals(this._touchingIndexPath) &&
+					!this._touchingIndexPath.equals(indexPath) &&
 					this.unhighlightItemAtIndexPathAnimatedNotifyDelegateShouldCheckHighlight(this._touchingIndexPath, true, true, true)
 				) {
 				this._currentIndexPath = indexPath;
 		        // moving back into the original touching cell
-		    } else if (!this._currentIndexPath.equals(this._touchingIndexPath) && indexPath.equals(this._touchingIndexPath)) {
+		    } else if (!this._currentIndexPath.equals(this._touchingIndexPath) && this._touchingIndexPath.equals(indexPath)) {
 		        this.highlightItemAtIndexPathAnimatedScrollPositionNotifyDelegate(this._touchingIndexPath, true, SCROLL_POSITION_NONE, true);
 				this._currentIndexPath = this._touchingIndexPath;
 		    }
@@ -1274,7 +1274,7 @@ public class CollectionView extends ScrollView {
 
 	private void updateVisibleCellsNow(boolean now) {
 		List<CollectionViewLayout.Attributes> layoutAttributesArray = this._collectionViewData.layoutAttributesForElementsInRect(this.getBounds());
-		MLog("CV_TEST updateVisibleCells " + layoutAttributesArray + ", " + this.getBounds());
+		MWarn("CV_TEST updateVisibleCells " + layoutAttributesArray + ", " + this.getBounds());
 
 		if (layoutAttributesArray == null || layoutAttributesArray.size() == 0) {
 		    // If our layout source isn't providing any layout information, we should just
@@ -1283,22 +1283,35 @@ public class CollectionView extends ScrollView {
 		}
 
 		// create ItemKey/Attributes dictionary
-		Map<CollectionViewItemKey,CollectionViewLayout.Attributes> itemKeysToAddDict = new HashMap<>();
+		Map<CollectionViewItemKey,CollectionViewLayout.Attributes> itemsToAdd = new HashMap<>();
+
+		Map<CollectionViewItemKey,Boolean> testMap = new HashMap<>();
+		CollectionViewItemKey key1 = CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(IndexPath.withItemInSection(0, 0));
+		CollectionViewItemKey key2 = CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(IndexPath.withItemInSection(0, 0));
+		testMap.put(key1, true);
+		MLog("CV_TEST contains: %s (%s) | value: %s | equals: %s | %d %d", testMap.containsKey(key2), testMap.containsKey(key1), testMap.get(key2), key1.equals(key2), key1.hashCode(), key2.hashCode());
+
+		List<CollectionViewItemKey> sortedKeys = Lists.sortedList(_allVisibleViewsDict.keySet());
+		CollectionViewItemKey first = null;
+		for(CollectionViewItemKey key : sortedKeys) {
+			first = first == null ? key : first;
+			MLog("CV_TEST updateVisibleCells - VISIBLE KEY: " + key + ", " + _allVisibleViewsDict.get(key));
+		}
 
 		// Add new cells.
-		for (CollectionViewLayout.Attributes layoutAttributes  : layoutAttributesArray) {
+		for (CollectionViewLayout.Attributes layoutAttributes : layoutAttributesArray) {
 		    CollectionViewItemKey itemKey = CollectionViewItemKey.collectionItemKeyForLayoutAttributes(layoutAttributes);
-		    itemKeysToAddDict.put(itemKey, layoutAttributes);
+		    itemsToAdd.put(itemKey, layoutAttributes);
 
 		    // check if cell is in visible dict; add it if not.
 		    CollectionReusableView view = _allVisibleViewsDict.get(itemKey);
 		    if (view == null) {
+				MLog("CV_TEST updateVisibleCells - NO REUSE KEY: " + itemKey + ", " + itemKey.equals(first));
 		        if (itemKey.getType() == CollectionViewLayout.CollectionViewItemType.CELL) {
 		            view = this.createPreparedCellForItemAtIndexPathWithLayoutAttributes(itemKey.getIndexPath(), layoutAttributes);
-
-		        }else if (itemKey.getType() == CollectionViewLayout.CollectionViewItemType.SUPPLEMENTARY_VIEW) {
+		        } else if (itemKey.getType() == CollectionViewLayout.CollectionViewItemType.SUPPLEMENTARY_VIEW) {
 		            view = this.createPreparedSupplementaryViewForElementOfKindAtIndexPathWithLayoutAttributes(layoutAttributes.getRepresentedElementKind(), layoutAttributes.getIndexPath(), layoutAttributes);
-		        }else if (itemKey.getType() == CollectionViewLayout.CollectionViewItemType.DECORATION_VIEW) {
+		        } else if (itemKey.getType() == CollectionViewLayout.CollectionViewItemType.DECORATION_VIEW) {
 		            view = this.dequeueReusableOrCreateDecorationViewOfKindForIndexPath(layoutAttributes.getRepresentedElementKind(), layoutAttributes.getIndexPath());
 		        }
 
@@ -1313,15 +1326,30 @@ public class CollectionView extends ScrollView {
 		    } else {
 		        // just update cell
 		        view.applyLayoutAttributes(layoutAttributes);
+				MLog("CV_TEST updateVisibleCells - reusing: " + view + " for " + itemKey);
 		    }
 		}
 
 		// Detect what items should be removed and queued back.
-		Set<CollectionViewItemKey> allVisibleItemKeys = new HashSet<>(_allVisibleViewsDict.keySet());
-		allVisibleItemKeys.removeAll(itemKeysToAddDict.keySet());
+		Set<CollectionViewItemKey> itemKeysToRemove = new HashSet<>(_allVisibleViewsDict.keySet());
+		// itemKeysToRemove.removeAll(itemsToAdd.keySet());
+
+		for(CollectionViewItemKey key : itemsToAdd.keySet()) {
+			itemKeysToRemove.remove(key);
+			MLog("CV_TEST updateVisibleCells - REMOVING KEY: " + key);
+		}
+
+		List<CollectionViewItemKey> a = Lists.sortedList(itemsToAdd.keySet());
+		List<CollectionViewItemKey> b = Lists.sortedList(itemKeysToRemove);
+		MLog("CV_TEST updateVisibleCells - VISIBLE: " + a);
+		MLog("CV_TEST updateVisibleCells - REMOVING: " + b);
+
+		if(a.size() > 0 && b.size() > 0) {
+			MLog("CV_TEST updateVisibleCells - EQUALS: " + a.get(0).equals(b.get(0)));
+		}
 
 		// Finally remove views that have not been processed and prepare them for re-use.
-		for (CollectionViewItemKey itemKey  : allVisibleItemKeys) {
+		for (CollectionViewItemKey itemKey : itemKeysToRemove) {
 		    CollectionReusableView reusableView = _allVisibleViewsDict.get(itemKey);
 
 		    if (reusableView != null) {
@@ -1639,8 +1667,7 @@ public class CollectionView extends ScrollView {
 					CollectionViewLayout.Attributes finalAttrs = _layout.layoutAttributesForItemAtIndexPath(newIndexPath);
 
 		            animations.add(new UpdateAnimation(view, startAttrs, finalAttrs));
-		            CollectionViewItemKey newKey = key.copy();
-		            newKey.setIndexPath(newIndexPath);
+		            CollectionViewItemKey newKey = key.copy(newIndexPath);
 		            newAllVisibleView.put(newKey, view);
 		        }
 

@@ -10,7 +10,6 @@ import mocha.graphics.Size;
 import mocha.ui.EdgeInsets;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -18,16 +17,12 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 	public static final String PSTCollectionElementKindSectionHeader = "UICollectionElementKindSectionHeader";
 	public static final String PSTCollectionElementKindSectionFooter = "UICollectionElementKindSectionFooter";
 
-	static final String PSTFlowLayoutCommonRowHorizontalAlignmentKey = "UIFlowLayoutCommonRowHorizontalAlignmentKey";
-	static final String PSTFlowLayoutLastRowHorizontalAlignmentKey = "UIFlowLayoutLastRowHorizontalAlignmentKey";
-	static final String PSTFlowLayoutRowVerticalAlignmentKey = "UIFlowLayoutRowVerticalAlignmentKey";
-
 	private Size _itemSize;
 	private CollectionViewFlowLayout.CollectionViewScrollDirection _scrollDirection;
 	private Size _headerReferenceSize;
 	private Size _footerReferenceSize;
 	private mocha.ui.EdgeInsets _sectionInset;
-	private Map<String, FlowLayoutAlignment> _rowAlignmentsOptionsDictionary;
+	private GridLayoutAlignmentOptions _rowAlignmentsOptions;
 	private float _lineSpacing;
 	private float _interitemSpacing;
 	private GridLayoutInfo _data;
@@ -84,13 +79,6 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 		HORIZONTAL
 	}
 
-	enum FlowLayoutAlignment {
-		MIN,
-		MID,
-		MAX,
-		JUSTIFY
-	}
-
 	public CollectionViewFlowLayout() {
 		this._itemSize = new Size(50.f, 50.f);
 		this._lineSpacing = 10.f;
@@ -102,13 +90,7 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 
 		this.rectCache = new SparseArray<>();
 
-		// set default values for row alignment.
-		_rowAlignmentsOptionsDictionary = mocha.foundation.Maps.create(
-				// TODO, those values are some enum. find out what that is.
-				PSTFlowLayoutCommonRowHorizontalAlignmentKey, CollectionViewFlowLayout.FlowLayoutAlignment.JUSTIFY,
-				PSTFlowLayoutLastRowHorizontalAlignmentKey, CollectionViewFlowLayout.FlowLayoutAlignment.JUSTIFY,
-				PSTFlowLayoutRowVerticalAlignmentKey, CollectionViewFlowLayout.FlowLayoutAlignment.MIN
-		);
+		this._rowAlignmentsOptions = new GridLayoutAlignmentOptions();
 	}
 
 	public void collectionViewDelegateDidChange() {
@@ -137,14 +119,16 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 
 		List<Attributes> layoutAttributesArray = new ArrayList<>();
 
-		MWarn("CV_TEST layoutAttributesForElementsInRect: " + _data.getSections().size() + ", " + rect);
 
 		List<GridLayoutSection> sections = _data.getSections();
-		int sectionsCount = _data.getSections().size();
+		int sectionsCount = sections.size();
+
+		MWarn("CV_TEST layoutAttributesForElementsInRect 1: " + sectionsCount + ", " + rect);
+
 		for(int sectionIndex = 0; sectionIndex < sectionsCount; sectionIndex++) {
 			GridLayoutSection section = sections.get(sectionIndex);
 
-			MLog("CV_TEST layoutAttributesForElementsInRect - section: " + section.getFrame() + ", " + section.getRows());
+			MLog("CV_TEST layoutAttributesForElementsInRect 2 - section: " + section.getFrame() + ", " + section.getRows());
 
 			if (section.getFrame().intersects(rect)) {
 				// if we have fixed size, calculate item frames only once.
@@ -245,9 +229,7 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 		if (row != null) {
 			// calculate item rect
 			Rect normalizedRowFrame = row.getRowFrame();
-			// normalizedRowFrame.offset(section.getFrame().origin);
-			normalizedRowFrame.origin.x += section.getFrame().origin.x;
-			normalizedRowFrame.origin.y += section.getFrame().origin.y;
+			normalizedRowFrame.offset(section.getFrame().origin);
 			layoutAttributes.setFrame(new Rect(normalizedRowFrame.origin.x + itemFrame.origin.x, normalizedRowFrame.origin.y + itemFrame.origin.y, itemFrame.size.width, itemFrame.size.height));
 		}
 
@@ -329,12 +311,13 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 	}
 
 	public void prepareLayout() {
-		_data = new GridLayoutInfo(); // clear old layout data
-		_data.setHorizontal(this.getScrollDirection() == CollectionViewFlowLayout.CollectionViewScrollDirection.HORIZONTAL);
-		_visibleBounds = this.getCollectionView().getBounds();
-		Size collectionViewSize = _visibleBounds.size;
-		_data.setDimension(_data.getHorizontal() ? collectionViewSize.height : collectionViewSize.width);
-		_data.setRowAlignmentOptions(_rowAlignmentsOptionsDictionary);
+		this._data = new GridLayoutInfo(); // clear old layout data
+		this._data.horizontal = this._scrollDirection == CollectionViewFlowLayout.CollectionViewScrollDirection.HORIZONTAL;
+		this._visibleBounds = this.getCollectionView().getBounds();
+
+		Size collectionViewSize = this._visibleBounds.size;
+		this._data.dimension = this._data.horizontal ? collectionViewSize.height : collectionViewSize.width;
+		this._data.setRowAlignmentOptions(this._rowAlignmentsOptions);
 		this.fetchItemsInfo();
 	}
 
@@ -344,30 +327,31 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 	}
 
 	void getSizingInfos() {
-		Assert.condition(_data.getSections().size() == 0, "Grid layout is already populated?");
+		Assert.condition(_data.getSections().size() == 0, "Flow layout is already populated?");
 		MWarn("CV_TEST,  IN getSizingInfos(): " + this._itemSize + ", " + this._data.getSections().size());
 
 		CollectionViewDelegateFlowLayout flowDataSource = null;
+		CollectionView collectionView = this.getCollectionView();
 
-		if (this.getCollectionView().getDelegate() instanceof CollectionViewDelegateFlowLayout) {
-			flowDataSource = (CollectionViewDelegateFlowLayout) this.getCollectionView().getDelegate();
+		if (collectionView.getDelegate() instanceof CollectionViewDelegateFlowLayout) {
+			flowDataSource = (CollectionViewDelegateFlowLayout) collectionView.getDelegate();
 		}
 
-		int numberOfSections = this.getCollectionView().numberOfSections();
+		int numberOfSections = collectionView.numberOfSections();
 		for (int section = 0; section < numberOfSections; section++) {
-			GridLayoutSection layoutSection = _data.addSection();
-			layoutSection.setVerticalInterstice(_data.getHorizontal() ? this.getMinimumInteritemSpacing() : this.getMinimumLineSpacing());
-			layoutSection.setHorizontalInterstice(!_data.getHorizontal() ? this.getMinimumInteritemSpacing() : this.getMinimumLineSpacing());
+			GridLayoutSection layoutSection = this._data.addSection();
+			layoutSection.setVerticalInterstice(this._data.horizontal ? this._interitemSpacing : this._lineSpacing);
+			layoutSection.setHorizontalInterstice(!_data.horizontal ? this._interitemSpacing : this._lineSpacing);
 
 			if (flowDataSource != null && this._gridLayoutFlags.delegateInsetForSection) {
-				layoutSection.setSectionMargins(flowDataSource.collectionViewLayoutInsetForSectionAtIndex(this.getCollectionView(), this, section));
+				layoutSection.setSectionMargins(flowDataSource.collectionViewLayoutInsetForSectionAtIndex(collectionView, this, section));
 			} else {
-				layoutSection.setSectionMargins(this.getSectionInset());
+				layoutSection.setSectionMargins(this._sectionInset);
 			}
 
 			if (flowDataSource != null && this._gridLayoutFlags.delegateLineSpacingForSection) {
-				float minimumLineSpacing = flowDataSource.collectionViewLayoutMinimumLineSpacingForSectionAtIndex(this.getCollectionView(), this, section);
-				if (_data.getHorizontal()) {
+				float minimumLineSpacing = flowDataSource.collectionViewLayoutMinimumLineSpacingForSectionAtIndex(collectionView, this, section);
+				if (_data.horizontal) {
 					layoutSection.setHorizontalInterstice(minimumLineSpacing);
 				} else {
 					layoutSection.setVerticalInterstice(minimumLineSpacing);
@@ -375,8 +359,8 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 			}
 
 			if (flowDataSource != null && this._gridLayoutFlags.delegateInteritemSpacingForSection) {
-				float minimumInterimSpacing = flowDataSource.collectionViewLayoutMinimumInteritemSpacingForSectionAtIndex(this.getCollectionView(), this, section);
-				if (_data.getHorizontal()) {
+				float minimumInterimSpacing = flowDataSource.collectionViewLayoutMinimumInteritemSpacingForSectionAtIndex(collectionView, this, section);
+				if (_data.horizontal) {
 					layoutSection.setVerticalInterstice(minimumInterimSpacing);
 				} else {
 					layoutSection.setHorizontalInterstice(minimumInterimSpacing);
@@ -385,27 +369,27 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 
 			Size headerReferenceSize;
 			if (flowDataSource != null && this._gridLayoutFlags.delegateReferenceSizeForHeader) {
-				headerReferenceSize = flowDataSource.collectionViewLayoutReferenceSizeForHeaderInSection(this.getCollectionView(), this, section);
+				headerReferenceSize = flowDataSource.collectionViewLayoutReferenceSizeForHeaderInSection(collectionView, this, section);
 			} else {
 				headerReferenceSize = this.getHeaderReferenceSize();
 			}
-			layoutSection.setHeaderDimension(_data.getHorizontal() ? headerReferenceSize.width : headerReferenceSize.height);
+			layoutSection.setHeaderDimension(_data.horizontal ? headerReferenceSize.width : headerReferenceSize.height);
 
 			Size footerReferenceSize;
 			if (flowDataSource != null && this._gridLayoutFlags.delegateReferenceSizeForFooter) {
-				footerReferenceSize = flowDataSource.collectionViewLayoutReferenceSizeForFooterInSection(this.getCollectionView(), this, section);
+				footerReferenceSize = flowDataSource.collectionViewLayoutReferenceSizeForFooterInSection(collectionView, this, section);
 			} else {
 				footerReferenceSize = this.getFooterReferenceSize();
 			}
-			layoutSection.setFooterDimension(_data.getHorizontal() ? footerReferenceSize.width : footerReferenceSize.height);
+			layoutSection.setFooterDimension(_data.horizontal ? footerReferenceSize.width : footerReferenceSize.height);
 
-			int numberOfItems = this.getCollectionView().numberOfItemsInSection(section);
+			int numberOfItems = collectionView.numberOfItemsInSection(section);
 
 			// if delegate implements size delegate, query it for all items
 			if (flowDataSource != null && this._gridLayoutFlags.delegateSizeForItem) {
 				for (int item = 0; item < numberOfItems; item++) {
 					IndexPath indexPath = IndexPath.withItemInSection(item, section);
-					Size itemSize = flowDataSource.collectionViewLayoutSizeForItemAtIndexPath(this.getCollectionView(), this, indexPath);
+					Size itemSize = flowDataSource.collectionViewLayoutSizeForItemAtIndexPath(collectionView, this, indexPath);
 
 					GridLayoutItem layoutItem = layoutSection.addItem();
 					layoutItem.setItemFrame(new mocha.graphics.Rect(Point.zero(), itemSize));
@@ -431,7 +415,7 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 
 			// update section offset to make frame absolute (section only calculates relative)
 			mocha.graphics.Rect sectionFrame = section.getFrame();
-			if (_data.getHorizontal()) {
+			if (_data.horizontal) {
 				sectionFrame.origin.x += contentSize.width;
 				contentSize.width += section.getFrame().size.width + section.getFrame().origin.x;
 				contentSize.height = Math.max(contentSize.height, sectionFrame.size.height + section.getFrame().origin.y + section.getSectionMargins().top + section.getSectionMargins().bottom);
@@ -527,18 +511,6 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 			return this._sectionInset.copy();
 		} else {
 			return mocha.ui.EdgeInsets.zero();
-		}
-	}
-
-	public Map<String, FlowLayoutAlignment> getRowAlignmentOptions() {
-		return this._rowAlignmentsOptionsDictionary;
-	}
-
-	public void setRowAlignmentOptions(Map<String, FlowLayoutAlignment> rowAlignmentOptions) {
-		this._rowAlignmentsOptionsDictionary.clear();
-
-		if (rowAlignmentOptions != null) {
-			this._rowAlignmentsOptionsDictionary.putAll(rowAlignmentOptions);
 		}
 	}
 

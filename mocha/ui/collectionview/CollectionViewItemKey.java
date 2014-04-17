@@ -1,8 +1,8 @@
 package mocha.ui.collectionview;
 
-import mocha.foundation.MObject;
+import mocha.foundation.*;
 
-class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<CollectionViewItemKey> {
+class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<CollectionViewItemKey>, mocha.foundation.Comparable<CollectionViewItemKey> {
 	static final String ELEMENT_KIND_CELL = "ELEMENT_KIND_CELL";
 
 	private CollectionViewLayout.CollectionViewItemType type;
@@ -11,17 +11,17 @@ class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<
 
 	public static CollectionViewItemKey collectionItemKeyForLayoutAttributes(CollectionViewLayout.Attributes layoutAttributes) {
 		CollectionViewItemKey key = new CollectionViewItemKey();
-		key.setIndexPath(layoutAttributes.getIndexPath());
-		key.setType(layoutAttributes.getRepresentedElementCategory());
-		key.setIdentifier(layoutAttributes.getRepresentedElementKind());
+		key.indexPath = layoutAttributes.getIndexPath();
+		key.type = layoutAttributes.getRepresentedElementCategory();
+		key.identifier = layoutAttributes.getRepresentedElementKind();
 		return key;
 	}
 
 	public static CollectionViewItemKey collectionItemKeyForCellWithIndexPath(mocha.foundation.IndexPath indexPath) {
 		CollectionViewItemKey key = new CollectionViewItemKey();
-		key.setIndexPath(indexPath);
-		key.setType(CollectionViewLayout.CollectionViewItemType.CELL);
-		key.setIdentifier(ELEMENT_KIND_CELL);
+		key.indexPath = indexPath;
+		key.type = CollectionViewLayout.CollectionViewItemType.CELL;
+		key.identifier = ELEMENT_KIND_CELL;
 		return key;
 	}
 
@@ -34,27 +34,45 @@ class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<
 	}
 
 	public boolean equals(Object other) {
+		boolean result = false;
+
 		if(other instanceof CollectionViewItemKey) {
 		    CollectionViewItemKey otherItemKey = (CollectionViewItemKey)other;
 
 		    if (this.type == otherItemKey.type && this.indexPath.equals(otherItemKey.indexPath)) {
 				if(this.identifier != null && otherItemKey.identifier != null) {
-					return this.identifier.equals(otherItemKey.identifier);
+					result = this.identifier.equals(otherItemKey.identifier);
 				} else {
-					return this.identifier == null && otherItemKey.identifier == null;
+					result = this.identifier == null && otherItemKey.identifier == null;
 				}
 		    }
 		}
 
-		return false;
+		// MLog("CV_TEST CollectionViewItemKey equals %s, %s = %s", this, other, result);
+
+		return result;
+	}
+
+	public ComparisonResult compareTo(CollectionViewItemKey other) {
+		return this.indexPath.compareTo(other.indexPath);
 	}
 
 	public CollectionViewItemKey copy() {
 		CollectionViewItemKey itemKey = new CollectionViewItemKey();
 
-		itemKey.setIndexPath(this.indexPath);
-		itemKey.setType(this.type);
-		itemKey.setIdentifier(this.identifier);
+		itemKey.indexPath = this.indexPath;
+		itemKey.type = this.type;
+		itemKey.identifier = this.identifier;
+
+		return itemKey;
+	}
+
+	public CollectionViewItemKey copy(IndexPath newIndexPath) {
+		CollectionViewItemKey itemKey = new CollectionViewItemKey();
+
+		itemKey.indexPath = newIndexPath;
+		itemKey.type = this.type;
+		itemKey.identifier = this.identifier;
 
 		return itemKey;
 	}
@@ -66,24 +84,12 @@ class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<
 		return this.type;
 	}
 
-	public void setType(CollectionViewLayout.CollectionViewItemType type) {
-		this.type = type;
-	}
-
-	public mocha.foundation.IndexPath getIndexPath() {
+	public IndexPath getIndexPath() {
 		return this.indexPath;
-	}
-
-	public void setIndexPath(mocha.foundation.IndexPath indexPath) {
-		this.indexPath = indexPath;
 	}
 
 	public String getIdentifier() {
 		return this.identifier;
-	}
-
-	public void setIdentifier(String identifier) {
-		this.identifier = identifier;
 	}
 
 }

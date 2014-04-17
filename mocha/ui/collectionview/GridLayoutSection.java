@@ -25,7 +25,7 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 	private float headerDimension;
 	private float footerDimension;
 	private GridLayoutInfo layoutInfo;
-	private Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> rowAlignmentOptions;
+	private GridLayoutAlignmentOptions rowAlignmentOptions;
 	private float otherMargin;
 	private float beginMargin;
 	private float endMargin;
@@ -41,7 +41,6 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 	public GridLayoutSection() {
 		this.items = new ArrayList<>();
 		this.rows = new ArrayList<>();
-		this.rowAlignmentOptions = new HashMap<>();
 
 		/*this.edgeInsets = EdgeInsets.zero();
 		this.frame = Rect.zero();
@@ -73,10 +72,10 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 		float dimensionLeft = 0;
 
 		// get dimension and compensate for section margin
-		float headerFooterDimension = this.layoutInfo.getDimension();
+		float headerFooterDimension = this.layoutInfo.dimension;
 		float dimension = headerFooterDimension;
 
-		if (this.layoutInfo.getHorizontal()) {
+		if (this.layoutInfo.horizontal) {
 			dimension -= this.edgeInsets.top + this.edgeInsets.bottom;
 			this.setHeaderFrame(new Rect(sectionSize.width, 0, this.headerDimension, headerFooterDimension));
 			sectionSize.width += this.headerDimension + this.edgeInsets.left;
@@ -86,7 +85,7 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 			sectionSize.height += this.headerDimension + this.edgeInsets.top;
 		}
 
-		float spacing = this.layoutInfo.getHorizontal() ? this.verticalInterstice : this.horizontalInterstice;
+		float spacing = this.layoutInfo.horizontal ? this.verticalInterstice : this.horizontalInterstice;
 
 		int rowIndex = 0;
 		GridLayoutRow row = null;
@@ -96,13 +95,17 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 
 			// TODO: fast path could even remove row creation and just calculate on the fly
 			GridLayoutItem item = null;
+			Size itemSize;
 
-			if (!finishCycle) {
+			if (finishCycle) {
+				itemSize = Size.zero();
+			} else {
 				item = this.fixedItemSize ? null : this.items.get(itemIndex);
+				itemSize = item == null ? this.itemSize : item.getItemFrame().size;
 			}
 
-			Size itemSize = (this.fixedItemSize || item == null) ? this.itemSize : item.getItemFrame().size;
-			float itemDimension = this.layoutInfo.getHorizontal() ? itemSize.height : itemSize.width;
+			MWarn("CV_TEST COMPUTE_LAYOUT %s %s %s %s %s", this.fixedItemSize, this.itemSize, item, finishCycle, this.items.size());
+			float itemDimension = this.layoutInfo.horizontal ? itemSize.height : itemSize.width;
 
 			// first item of each row does not add spacing
 			if (itemsByRowCount > 0) {
@@ -125,7 +128,7 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 
 					Size rowSize = row.getRowSize();
 
-					if (this.layoutInfo.getHorizontal()) {
+					if (this.layoutInfo.horizontal) {
 						row.setRowFrame(new Rect(sectionSize.width, this.edgeInsets.top, rowSize.width, rowSize.height));
 						sectionSize.height = Math.max(rowSize.height, sectionSize.height);
 						sectionSize.width += rowSize.width + (finishCycle ? 0 : this.horizontalInterstice);
@@ -168,7 +171,7 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 			itemsByRowCount++;
 		}
 
-		if (this.layoutInfo.getHorizontal()) {
+		if (this.layoutInfo.horizontal) {
 			sectionSize.width += this.edgeInsets.right;
 			this.setFooterFrame(new Rect(sectionSize.width, 0, this.footerDimension, headerFooterDimension));
 			sectionSize.width += this.footerDimension;
@@ -198,7 +201,7 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 
 	public GridLayoutSection copy() {
 		GridLayoutSection copy = new GridLayoutSection();
-		copy.rowAlignmentOptions.putAll(this.rowAlignmentOptions);
+		copy.rowAlignmentOptions = this.rowAlignmentOptions == null ? null : this.rowAlignmentOptions.copy();
 		copy.items.addAll(this.items);
 		copy.rows.addAll(this.rows);
 
@@ -391,15 +394,16 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 		this.layoutInfo = layoutInfo;
 	}
 
-	public Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> getRowAlignmentOptions() {
+
+	public GridLayoutAlignmentOptions getRowAlignmentOptions() {
 		return this.rowAlignmentOptions;
 	}
 
-	public void setRowAlignmentOptions(Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> rowAlignmentOptions) {
-		this.rowAlignmentOptions.clear();
-
+	public void setRowAlignmentOptions(GridLayoutAlignmentOptions rowAlignmentOptions) {
 		if(rowAlignmentOptions != null) {
-			this.rowAlignmentOptions.putAll(rowAlignmentOptions);
+			this.rowAlignmentOptions = rowAlignmentOptions.copy();
+		} else {
+			this.rowAlignmentOptions = null;
 		}
 	}
 

@@ -1,459 +1,414 @@
 package mocha.ui.collectionview;
 
+import com.tvguidemobile.R;
 import mocha.foundation.Assert;
+import mocha.foundation.Copying;
 import mocha.foundation.MObject;
+import mocha.graphics.Rect;
+import mocha.graphics.Size;
+import mocha.ui.EdgeInsets;
 
 import java.util.*;
 
-class GridLayoutSection extends MObject {
-	private List<GridLayoutItem> _items;
-	private List<GridLayoutRow> _rows;
-	private boolean _fixedItemSize;
-	private mocha.graphics.Size _itemSize;
-	private int _itemsCount;
-	private float _verticalInterstice;
-	private float _horizontalInterstice;
-	private mocha.ui.EdgeInsets _sectionMargins;
-	private mocha.graphics.Rect _frame;
-	private mocha.graphics.Rect _headerFrame;
-	private mocha.graphics.Rect _footerFrame;
-	private float _headerDimension;
-	private float _footerDimension;
-	private GridLayoutInfo _layoutInfo;
-	private Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> _rowAlignmentOptions;
-	private float _otherMargin;
-	private float _beginMargin;
-	private float _endMargin;
-	private float _actualGap;
-	private float _lastRowBeginMargin;
-	private float _lastRowEndMargin;
-	private float _lastRowActualGap;
-	private boolean _lastRowIncomplete;
-	private int _itemsByRowCount;
-	private int _indexOfImcompleteRow;
-	private boolean _isValid;
+class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
+	private List<GridLayoutItem> items;
+	private List<GridLayoutRow> rows;
+	private boolean fixedItemSize;
+	private mocha.graphics.Size itemSize;
+	private int itemsCount;
+	private float verticalInterstice;
+	private float horizontalInterstice;
+	private EdgeInsets edgeInsets;
+	private Rect frame;
+	private Rect headerFrame;
+	private Rect footerFrame;
+	private float headerDimension;
+	private float footerDimension;
+	private GridLayoutInfo layoutInfo;
+	private Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> rowAlignmentOptions;
+	private float otherMargin;
+	private float beginMargin;
+	private float endMargin;
+	private float actualGap;
+	private float lastRowBeginMargin;
+	private float lastRowEndMargin;
+	private float lastRowActualGap;
+	private boolean lastRowIncomplete;
+	private int itemsByRowCount;
+	private int indexOfImcompleteRow;
+	private boolean valid;
 
-	void recomputeFromIndex(int index) {
+	public GridLayoutSection() {
+		this.items = new ArrayList<>();
+		this.rows = new ArrayList<>();
+		this.rowAlignmentOptions = new HashMap<>();
+
+		/*this.edgeInsets = EdgeInsets.zero();
+		this.frame = Rect.zero();
+		this.headerFrame = Rect.zero();
+		this.footerFrame = Rect.zero();*/
+	}
+
+	private void recomputeFromIndex(int index) {
 		// TODO: use index.
 		this.invalidate();
 		this.computeLayout();
 	}
 
-	void invalidate() {
-		_isValid = false;
+	public void invalidate() {
+		this.valid = false;
 		this.setRows(null);
 	}
 
-	void computeLayout() {
-		if (!_isValid) {
-		    Assert.condition(this.getRows().size() == 0, "No rows shall be at this point.");
+	public void computeLayout() {
+		if (this.valid) return;
 
-		    // iterate over all items, turning them into rows.
-		    mocha.graphics.Size sectionSize = mocha.graphics.Size.zero();
-		    int rowIndex = 0;
-		    int itemIndex = 0;
-		    int itemsByRowCount = 0;
-		    float dimensionLeft = 0;
-		    GridLayoutRow row = null;
-		    // get dimension and compensate for section margin
-		    float headerFooterDimension = this.getLayoutInfo().getDimension();
-		    float dimension = headerFooterDimension;
+		Assert.condition(this.rows.size() == 0, "No rows shall be at this point.");
+		MLog("CV_TEST computeLayout: " + this.itemsCount + ", " + this.itemSize);
 
-		    if (this.getLayoutInfo().getHorizontal()) {
-		        dimension -= this.getSectionMargins().top + this.getSectionMargins().bottom;
-		        this.setHeaderFrame(new mocha.graphics.Rect(sectionSize.width, 0, this.getHeaderDimension(), headerFooterDimension));
-		        sectionSize.width += this.getHeaderDimension() + this.getSectionMargins().left;
-		    }else {
-		        dimension -= this.getSectionMargins().left + this.getSectionMargins().right;
-		        this.setHeaderFrame(new mocha.graphics.Rect(0, sectionSize.height, headerFooterDimension, this.getHeaderDimension()));
-		        sectionSize.height += this.getHeaderDimension() + this.getSectionMargins().top;
-		    }
+		// iterate over all items, turning them into rows.
+		mocha.graphics.Size sectionSize = mocha.graphics.Size.zero();
 
-		    float spacing = this.getLayoutInfo().getHorizontal() ? this.getVerticalInterstice() : this.getHorizontalInterstice();
+		int itemsByRowCount = 0;
+		float dimensionLeft = 0;
 
-		    do {
-		        boolean finishCycle = itemIndex >= this.getItemsCount();
-		        // TODO: fast path could even remove row creation and just calculate on the fly
-		        GridLayoutItem item = null;
-		        if (!finishCycle) item = this.getFixedItemSize() ? null : this.getItems().get(itemIndex);
+		// get dimension and compensate for section margin
+		float headerFooterDimension = this.layoutInfo.getDimension();
+		float dimension = headerFooterDimension;
 
-		        mocha.graphics.Size itemSize = this.getFixedItemSize() ? this.getItemSize() : item.getItemFrame().size;
-		        float itemDimension = this.getLayoutInfo().getHorizontal() ? itemSize.height : itemSize.width;
-		        // first item of each row does not add spacing
-		        if (itemsByRowCount > 0) itemDimension += spacing;
-		        if (dimensionLeft < itemDimension || finishCycle) {
-		            // finish current row
-		            if (row != null) {
-		                // compensate last row
-		                this.setItemsByRowCount(Math.max(itemsByRowCount, this.getItemsByRowCount()));
-		                row.setItemCount(itemsByRowCount);
-
-		                // if current row is done but there are still items left, increase the incomplete row counter
-		                if (!finishCycle) this.setIndexOfImcompleteRow(rowIndex);
-
-		                row.layoutRow();
-
-		                if (this.getLayoutInfo().getHorizontal()) {
-		                    row.setRowFrame(new mocha.graphics.Rect(sectionSize.width, this.getSectionMargins().top, row.getRowSize().width, row.getRowSize().height));
-		                    sectionSize.height = Math.max(row.getRowSize().height, sectionSize.height);
-		                    sectionSize.width += row.getRowSize().width + (finishCycle ? 0 : this.getHorizontalInterstice());
-		                }else {
-		                    row.setRowFrame(new mocha.graphics.Rect(this.getSectionMargins().left, sectionSize.height, row.getRowSize().width, row.getRowSize().height));
-		                    sectionSize.height += row.getRowSize().height + (finishCycle ? 0 : this.getVerticalInterstice());
-		                    sectionSize.width = Math.max(row.getRowSize().width, sectionSize.width);
-		                }
-		            }
-		            // add new rows until the section is fully laid out
-		            if (!finishCycle) {
-		                // create new row
-		                row.setComplete(true); // finish up current row
-		                row = this.addRow();
-		                row.setFixedItemSize(this.getFixedItemSize());
-		                row.setIndex(rowIndex);
-		                this.setIndexOfImcompleteRow(rowIndex);
-		                rowIndex++;
-		                // convert an item from previous row to current, remove spacing for first item
-		                if (itemsByRowCount > 0) itemDimension -= spacing;
-		                dimensionLeft = dimension - itemDimension;
-		                itemsByRowCount = 0;
-		            }
-		        }else {
-		            dimensionLeft -= itemDimension;
-		        }
-
-		        // add item on slow path
-		        if (item != null) row.addItem(item);
-
-		        itemIndex++;
-		        itemsByRowCount++;
-		    } while (itemIndex <= this.getItemsCount()); // cycle once more to finish last row
-
-		    if (this.getLayoutInfo().getHorizontal()) {
-		        sectionSize.width += this.getSectionMargins().right;
-		        this.setFooterFrame(new mocha.graphics.Rect(sectionSize.width, 0, this.getFooterDimension(), headerFooterDimension));
-		        sectionSize.width += this.getFooterDimension();
-		    }else {
-		        sectionSize.height += this.getSectionMargins().bottom;
-		        this.setFooterFrame(new mocha.graphics.Rect(0, sectionSize.height, headerFooterDimension, this.getFooterDimension()));
-		        sectionSize.height += this.getFooterDimension();
-		    }
-
-		    _frame = new mocha.graphics.Rect(0, 0, sectionSize.width, sectionSize.height);
-		    _isValid = true;
+		if (this.layoutInfo.getHorizontal()) {
+			dimension -= this.edgeInsets.top + this.edgeInsets.bottom;
+			this.setHeaderFrame(new Rect(sectionSize.width, 0, this.headerDimension, headerFooterDimension));
+			sectionSize.width += this.headerDimension + this.edgeInsets.left;
+		} else {
+			dimension -= this.edgeInsets.left + this.edgeInsets.right;
+			this.setHeaderFrame(new Rect(0, sectionSize.height, headerFooterDimension, this.headerDimension));
+			sectionSize.height += this.headerDimension + this.edgeInsets.top;
 		}
+
+		float spacing = this.layoutInfo.getHorizontal() ? this.verticalInterstice : this.horizontalInterstice;
+
+		int rowIndex = 0;
+		GridLayoutRow row = null;
+
+		for(int itemIndex = 0; itemIndex <= this.itemsCount; itemIndex++) {
+			boolean finishCycle = itemIndex >= this.itemsCount;
+
+			// TODO: fast path could even remove row creation and just calculate on the fly
+			GridLayoutItem item = null;
+
+			if (!finishCycle) {
+				item = this.fixedItemSize ? null : this.items.get(itemIndex);
+			}
+
+			Size itemSize = (this.fixedItemSize || item == null) ? this.itemSize : item.getItemFrame().size;
+			float itemDimension = this.layoutInfo.getHorizontal() ? itemSize.height : itemSize.width;
+
+			// first item of each row does not add spacing
+			if (itemsByRowCount > 0) {
+				itemDimension += spacing;
+			}
+
+			if (dimensionLeft < itemDimension || finishCycle) {
+				// finish current row
+				if (row != null) {
+					// compensate last row
+					this.itemsByRowCount = Math.max(itemsByRowCount, this.itemsByRowCount);
+					row.setItemCount(itemsByRowCount);
+
+					// if current row is done but there are still items left, increase the incomplete row counter
+					if (!finishCycle) {
+						this.indexOfImcompleteRow = rowIndex;
+					}
+
+					row.layoutRow();
+
+					Size rowSize = row.getRowSize();
+
+					if (this.layoutInfo.getHorizontal()) {
+						row.setRowFrame(new Rect(sectionSize.width, this.edgeInsets.top, rowSize.width, rowSize.height));
+						sectionSize.height = Math.max(rowSize.height, sectionSize.height);
+						sectionSize.width += rowSize.width + (finishCycle ? 0 : this.horizontalInterstice);
+					} else {
+						row.setRowFrame(new Rect(this.edgeInsets.left, sectionSize.height, rowSize.width, rowSize.height));
+						sectionSize.height += rowSize.height + (finishCycle ? 0 : this.verticalInterstice);
+						sectionSize.width = Math.max(rowSize.width, sectionSize.width);
+					}
+				}
+
+				// add new rows until the section is fully laid out
+				if (!finishCycle) {
+					if(row != null) {
+						row.setComplete(true); // finish up current row
+					}
+
+					// create new row
+					row = this.addRow();
+					row.setFixedItemSize(this.fixedItemSize);
+					row.setIndex(rowIndex);
+					this.indexOfImcompleteRow = rowIndex;
+					rowIndex++;
+
+					// convert an item from previous row to current, remove spacing for first item
+					if (itemsByRowCount > 0) itemDimension -= spacing;
+					dimensionLeft = dimension - itemDimension;
+					itemsByRowCount = 0;
+				}
+			} else {
+				dimensionLeft -= itemDimension;
+			}
+
+			// add item on slow path
+			if (item != null && row != null) {
+				row.addItem(item);
+			}
+
+			MLog("CV_TEST, computeLayout, adding " + item + " to " + row);
+
+			itemsByRowCount++;
+		}
+
+		if (this.layoutInfo.getHorizontal()) {
+			sectionSize.width += this.edgeInsets.right;
+			this.setFooterFrame(new Rect(sectionSize.width, 0, this.footerDimension, headerFooterDimension));
+			sectionSize.width += this.footerDimension;
+		} else {
+			sectionSize.height += this.edgeInsets.bottom;
+			this.setFooterFrame(new Rect(0, sectionSize.height, headerFooterDimension, this.footerDimension));
+			sectionSize.height += this.footerDimension;
+		}
+
+		this.frame = new Rect(0, 0, sectionSize.width, sectionSize.height);
+		this.valid = true;
 	}
 
-	GridLayoutItem addItem() {
+	public GridLayoutItem addItem() {
 		GridLayoutItem item = new GridLayoutItem();
 		item.setSection(this);
-		_items.add(item);
+		this.items.add(item);
 		return item;
 	}
 
-	GridLayoutRow addRow() {
+	public GridLayoutRow addRow() {
 		GridLayoutRow row = new GridLayoutRow();
 		row.setSection(this);
-		_rows.add(row);
+		this.rows.add(row);
 		return row;
 	}
 
-	GridLayoutSection snapshot() {
-		GridLayoutSection snapshotSection = new GridLayoutSection();
-		snapshotSection.setItems(this.getItems());
-		snapshotSection.setRows(this.getRows());
-		snapshotSection.setVerticalInterstice(this.getVerticalInterstice());
-		snapshotSection.setHorizontalInterstice(this.getHorizontalInterstice());
-		snapshotSection.setSectionMargins(this.getSectionMargins());
-		snapshotSection.setFrame(this.getFrame());
-		snapshotSection.setHeaderFrame(this.getHeaderFrame());
-		snapshotSection.setFooterFrame(this.getFooterFrame());
-		snapshotSection.setHeaderDimension(this.getHeaderDimension());
-		snapshotSection.setFooterDimension(this.getFooterDimension());
-		snapshotSection.setLayoutInfo(this.getLayoutInfo());
-		snapshotSection.setRowAlignmentOptions(this.getRowAlignmentOptions());
-		snapshotSection.setFixedItemSize(this.getFixedItemSize());
-		snapshotSection.setItemSize(this.getItemSize());
-		snapshotSection.setItemsCount(this.getItemsCount());
-		snapshotSection.setOtherMargin(this.getOtherMargin());
-		snapshotSection.setBeginMargin(this.getBeginMargin());
-		snapshotSection.setEndMargin(this.getEndMargin());
-		snapshotSection.setActualGap(this.getActualGap());
-		snapshotSection.setLastRowBeginMargin(this.getLastRowBeginMargin());
-		snapshotSection.setLastRowEndMargin(this.getLastRowEndMargin());
-		snapshotSection.setLastRowActualGap(this.getLastRowActualGap());
-		snapshotSection.setLastRowIncomplete(this.getLastRowIncomplete());
-		snapshotSection.setItemsByRowCount(this.getItemsByRowCount());
-		snapshotSection.setIndexOfImcompleteRow(this.getIndexOfImcompleteRow());
-		return snapshotSection;
-	}
+	public GridLayoutSection copy() {
+		GridLayoutSection copy = new GridLayoutSection();
+		copy.rowAlignmentOptions.putAll(this.rowAlignmentOptions);
+		copy.items.addAll(this.items);
+		copy.rows.addAll(this.rows);
 
-	public GridLayoutSection() {
-		this._items = new ArrayList<>();
-		this._rows = new ArrayList<>();
-		this._rowAlignmentOptions = new HashMap<>();
+		copy.edgeInsets = this.edgeInsets == null ? null : this.edgeInsets.copy();
+		copy.itemSize = this.itemSize == null ? null : this.itemSize.copy();
+
+		copy.frame = this.frame == null ? null : this.frame.copy();
+		copy.headerFrame = this.headerFrame == null ? null : this.headerFrame.copy();
+		copy.footerFrame = this.footerFrame == null ? null : this.footerFrame.copy();
+
+		copy.verticalInterstice = this.verticalInterstice;
+		copy.horizontalInterstice = this.horizontalInterstice;
+		copy.headerDimension = this.headerDimension;
+		copy.footerDimension = this.footerDimension;
+		copy.layoutInfo = this.layoutInfo;
+		copy.fixedItemSize = this.fixedItemSize;
+		copy.itemsCount = this.itemsCount;
+		copy.otherMargin = this.otherMargin;
+		copy.beginMargin = this.beginMargin;
+		copy.endMargin = this.endMargin;
+		copy.actualGap = this.actualGap;
+		copy.lastRowBeginMargin = this.lastRowBeginMargin;
+		copy.lastRowEndMargin = this.lastRowEndMargin;
+		copy.lastRowActualGap = this.lastRowActualGap;
+		copy.lastRowIncomplete = this.lastRowIncomplete;
+		copy.itemsByRowCount = this.itemsByRowCount;
+		copy.indexOfImcompleteRow = this.indexOfImcompleteRow;
+
+		return copy;
 	}
 
 	protected String toStringExtra() {
 		return String.format("itemCount:%d frame:%s rows:%s", this.getItemsCount(), this.getFrame(), this.getRows());
 	}
 
-	int itemsCount() {
-		return this.getFixedItemSize() ? _itemsCount : this.getItems().size();
-	}
-
 	/* Setters & Getters */
 	/* ========================================== */
 
 	public List<GridLayoutItem> getItems() {
-		return this._items;
+		return this.items;
 	}
 
 	public void setItems(List<GridLayoutItem> items) {
-		this._rows.clear();
+		this.rows.clear();
 
 		if(items != null) {
-			this._items.addAll(items);
+			this.items.addAll(items);
 		}
 	}
 
 	public List<GridLayoutRow> getRows() {
-		return this._rows;
+		return this.rows;
 	}
 
 	public void setRows(List<GridLayoutRow> rows) {
-		this._rows.clear();
+		this.rows.clear();
 
 		if(rows != null) {
-			this._rows.addAll(rows);
+			this.rows.addAll(rows);
 		}
 	}
 
 	public boolean getFixedItemSize() {
-		return this._fixedItemSize;
+		return this.fixedItemSize;
 	}
 
 	public void setFixedItemSize(boolean fixedItemSize) {
-		this._fixedItemSize = fixedItemSize;
+		this.fixedItemSize = fixedItemSize;
 	}
 
 	public mocha.graphics.Size getItemSize() {
-		if(this._itemSize != null) {
-			return this._itemSize.copy();
+		if(this.itemSize != null) {
+			return this.itemSize.copy();
 		} else {
 			return mocha.graphics.Size.zero();
 		}
 	}
 
 	public void setItemSize(mocha.graphics.Size itemSize) {
-		if(this._itemSize != null) {
-			this._itemSize = itemSize.copy();
+		if(itemSize != null) {
+			this.itemSize = itemSize.copy();
+			MWarn("CV_TEST, SET ITEM SIZE TO: " + itemSize);
 		} else {
-			this._itemSize = mocha.graphics.Size.zero();
+			this.itemSize = mocha.graphics.Size.zero();
+			MWarn("CV_TEST, SET ITEM SIZE TO: ZERO");
 		}
 	}
 
 	public int getItemsCount() {
-		return this._itemsCount;
+		return this.itemsCount;
 	}
 
 	public void setItemsCount(int itemsCount) {
-		this._itemsCount = itemsCount;
+		this.itemsCount = itemsCount;
 	}
 
 	public float getVerticalInterstice() {
-		return this._verticalInterstice;
+		return this.verticalInterstice;
 	}
 
 	public void setVerticalInterstice(float verticalInterstice) {
-		this._verticalInterstice = verticalInterstice;
+		this.verticalInterstice = verticalInterstice;
 	}
 
 	public float getHorizontalInterstice() {
-		return this._horizontalInterstice;
+		return this.horizontalInterstice;
 	}
 
 	public void setHorizontalInterstice(float horizontalInterstice) {
-		this._horizontalInterstice = horizontalInterstice;
+		this.horizontalInterstice = horizontalInterstice;
 	}
 
-	public mocha.ui.EdgeInsets getSectionMargins() {
-		if(this._sectionMargins != null) {
-			return this._sectionMargins.copy();
+	public EdgeInsets getSectionMargins() {
+		if(this.edgeInsets != null) {
+			return this.edgeInsets.copy();
 		} else {
-			return mocha.ui.EdgeInsets.zero();
+			return EdgeInsets.zero();
 		}
 	}
 
-	public void setSectionMargins(mocha.ui.EdgeInsets sectionMargins) {
-		if(this._sectionMargins != null) {
-			this._sectionMargins = sectionMargins.copy();
+	public void setSectionMargins(EdgeInsets sectionMargins) {
+		if(edgeInsets != null) {
+			this.edgeInsets = sectionMargins.copy();
 		} else {
-			this._sectionMargins = mocha.ui.EdgeInsets.zero();
+			this.edgeInsets = EdgeInsets.zero();
 		}
 	}
 
-	public mocha.graphics.Rect getFrame() {
-		if(this._frame != null) {
-			return this._frame.copy();
+	public Rect getFrame() {
+		if(this.frame != null) {
+			return this.frame.copy();
 		} else {
-			return mocha.graphics.Rect.zero();
+			return Rect.zero();
 		}
 	}
 
-	public void setFrame(mocha.graphics.Rect frame) {
-		if(this._frame != null) {
-			this._frame = frame.copy();
+	public void setFrame(Rect frame) {
+		if(frame != null) {
+			this.frame = frame.copy();
 		} else {
-			this._frame = mocha.graphics.Rect.zero();
+			this.frame = Rect.zero();
 		}
 	}
 
-	public mocha.graphics.Rect getHeaderFrame() {
-		if(this._headerFrame != null) {
-			return this._headerFrame.copy();
+	public Rect getHeaderFrame() {
+		if(this.headerFrame != null) {
+			return this.headerFrame.copy();
 		} else {
-			return mocha.graphics.Rect.zero();
+			return Rect.zero();
 		}
 	}
 
-	public void setHeaderFrame(mocha.graphics.Rect headerFrame) {
-		if(this._headerFrame != null) {
-			this._headerFrame = headerFrame.copy();
+	public void setHeaderFrame(Rect headerFrame) {
+		if(headerFrame != null) {
+			this.headerFrame = headerFrame.copy();
 		} else {
-			this._headerFrame = mocha.graphics.Rect.zero();
+			this.headerFrame = Rect.zero();
 		}
 	}
 
-	public mocha.graphics.Rect getFooterFrame() {
-		if(this._footerFrame != null) {
-			return this._footerFrame.copy();
+	public Rect getFooterFrame() {
+		if(this.footerFrame != null) {
+			return this.footerFrame.copy();
 		} else {
-			return mocha.graphics.Rect.zero();
+			return Rect.zero();
 		}
 	}
 
-	public void setFooterFrame(mocha.graphics.Rect footerFrame) {
-		if(this._footerFrame != null) {
-			this._footerFrame = footerFrame.copy();
+	public void setFooterFrame(Rect footerFrame) {
+		if(footerFrame != null) {
+			this.footerFrame = footerFrame.copy();
 		} else {
-			this._footerFrame = mocha.graphics.Rect.zero();
+			this.footerFrame = Rect.zero();
 		}
-	}
-
-	public float getHeaderDimension() {
-		return this._headerDimension;
 	}
 
 	public void setHeaderDimension(float headerDimension) {
-		this._headerDimension = headerDimension;
-	}
-
-	public float getFooterDimension() {
-		return this._footerDimension;
+		this.headerDimension = headerDimension;
 	}
 
 	public void setFooterDimension(float footerDimension) {
-		this._footerDimension = footerDimension;
+		this.footerDimension = footerDimension;
 	}
 
 	public GridLayoutInfo getLayoutInfo() {
-		return this._layoutInfo;
+		return this.layoutInfo;
 	}
 
 	public void setLayoutInfo(GridLayoutInfo layoutInfo) {
-		this._layoutInfo = layoutInfo;
+		this.layoutInfo = layoutInfo;
 	}
 
 	public Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> getRowAlignmentOptions() {
-		return this._rowAlignmentOptions;
+		return this.rowAlignmentOptions;
 	}
 
 	public void setRowAlignmentOptions(Map<String,CollectionViewFlowLayout.FlowLayoutAlignment> rowAlignmentOptions) {
-		this._rowAlignmentOptions.clear();
+		this.rowAlignmentOptions.clear();
 
 		if(rowAlignmentOptions != null) {
-			this._rowAlignmentOptions.putAll(rowAlignmentOptions);
+			this.rowAlignmentOptions.putAll(rowAlignmentOptions);
 		}
 	}
 
-	public float getOtherMargin() {
-		return this._otherMargin;
-	}
-
-	public void setOtherMargin(float otherMargin) {
-		this._otherMargin = otherMargin;
-	}
-
-	public float getBeginMargin() {
-		return this._beginMargin;
-	}
-
-	public void setBeginMargin(float beginMargin) {
-		this._beginMargin = beginMargin;
-	}
-
-	public float getEndMargin() {
-		return this._endMargin;
-	}
-
-	public void setEndMargin(float endMargin) {
-		this._endMargin = endMargin;
-	}
-
-	public float getActualGap() {
-		return this._actualGap;
-	}
-
-	public void setActualGap(float actualGap) {
-		this._actualGap = actualGap;
-	}
-
-	public float getLastRowBeginMargin() {
-		return this._lastRowBeginMargin;
-	}
-
-	public void setLastRowBeginMargin(float lastRowBeginMargin) {
-		this._lastRowBeginMargin = lastRowBeginMargin;
-	}
-
-	public float getLastRowEndMargin() {
-		return this._lastRowEndMargin;
-	}
-
-	public void setLastRowEndMargin(float lastRowEndMargin) {
-		this._lastRowEndMargin = lastRowEndMargin;
-	}
-
-	public float getLastRowActualGap() {
-		return this._lastRowActualGap;
-	}
-
-	public void setLastRowActualGap(float lastRowActualGap) {
-		this._lastRowActualGap = lastRowActualGap;
-	}
-
-	public boolean getLastRowIncomplete() {
-		return this._lastRowIncomplete;
-	}
-
-	public void setLastRowIncomplete(boolean lastRowIncomplete) {
-		this._lastRowIncomplete = lastRowIncomplete;
-	}
-
 	public int getItemsByRowCount() {
-		return this._itemsByRowCount;
-	}
-
-	public void setItemsByRowCount(int itemsByRowCount) {
-		this._itemsByRowCount = itemsByRowCount;
+		return this.itemsByRowCount;
 	}
 
 	public int getIndexOfImcompleteRow() {
-		return this._indexOfImcompleteRow;
-	}
-
-	public void setIndexOfImcompleteRow(int indexOfImcompleteRow) {
-		this._indexOfImcompleteRow = indexOfImcompleteRow;
+		return this.indexOfImcompleteRow;
 	}
 
 }

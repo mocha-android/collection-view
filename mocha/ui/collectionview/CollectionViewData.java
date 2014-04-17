@@ -1,12 +1,9 @@
 package mocha.ui.collectionview;
 
-import com.android.internal.util.Predicate;
 import mocha.foundation.*;
 import mocha.graphics.Rect;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 class CollectionViewData extends MObject {
@@ -15,17 +12,13 @@ class CollectionViewData extends MObject {
 	private int _numSections;
 	private int[] _sectionItemCounts;
 	private mocha.graphics.Size _contentSize;
-	private CollectionViewDataFlagsStruct _collectionViewDataFlags = new CollectionViewDataFlagsStruct();
 	private CollectionView _collectionView;
 	private CollectionViewLayout _layout;
 	private List<CollectionViewLayout.Attributes> _cachedLayoutAttributes;
+	private boolean contentSizeIsValid;
+	private boolean itemCountsAreValid;
+	private boolean layoutIsPrepared;
 
-	private class CollectionViewDataFlagsStruct {
-		boolean contentSizeIsValid;
-		boolean itemCountsAreValid;
-		boolean layoutIsPrepared;
-
-	}
 
 	public CollectionViewData(CollectionView collectionView, CollectionViewLayout layout) {
 		_collectionView = collectionView;
@@ -37,8 +30,8 @@ class CollectionViewData extends MObject {
 		this.prepareToLoadData();
 
 		// TODO: check if we need to fetch data from layout
-		if (!_validLayoutRect.equals(rect)) {
-		    _validLayoutRect = rect;
+		if (_validLayoutRect == null || !_validLayoutRect.equals(rect)) {
+		    _validLayoutRect = rect.copy();
 		    // we only want cell layoutAttributes & supplementaryView layoutAttributes
 			this._cachedLayoutAttributes = Lists.filteredList(this.getLayout().layoutAttributesForElementsInRect(rect), new Lists.Filter<CollectionViewLayout.Attributes>() {
 				public boolean filter(CollectionViewLayout.Attributes item) {
@@ -84,9 +77,9 @@ class CollectionViewData extends MObject {
 	}
 
 	void invalidate() {
-		_collectionViewDataFlags.itemCountsAreValid = false;
-		_collectionViewDataFlags.layoutIsPrepared = false;
-		_validLayoutRect = null;  // don't set mocha.graphics.Rect.zero() in case of _contentSize=mocha.graphics.Size.zero()
+		this.itemCountsAreValid = false;
+		this.layoutIsPrepared = false;
+		this._validLayoutRect = null;  // don't set mocha.graphics.Rect.zero() in case of _contentSize=mocha.graphics.Size.zero()
 	}
 
 	int numberOfItemsBeforeSection(int section) {
@@ -113,9 +106,11 @@ class CollectionViewData extends MObject {
 		}
 
 		int numberOfItemsInSection = 0;
+
 		if (_sectionItemCounts != null) {
 		    numberOfItemsInSection = _sectionItemCounts[section];
 		}
+
 		return numberOfItemsInSection;
 	}
 
@@ -134,10 +129,11 @@ class CollectionViewData extends MObject {
 	}
 
 	void prepareToLoadData() {
-		if (!this.layoutIsPrepared()) {
+		MLog("CV_TEST - PREPARE TO LOAD: " + this.layoutIsPrepared);
+		if (!this.layoutIsPrepared) {
 		    this.getLayout().prepareLayout();
 		    _contentSize = this.getLayout().collectionViewContentSize().copy();
-		    this.setLayoutIsPrepared(true);
+			this.layoutIsPrepared = true;
 		}
 	}
 
@@ -145,16 +141,8 @@ class CollectionViewData extends MObject {
 		return String.format("numItems:%d numSections:%d", this.numberOfItems(), this.numberOfSections());
 	}
 
-	boolean layoutIsPrepared() {
-		return _collectionViewDataFlags.layoutIsPrepared;
-	}
-
-	void setLayoutIsPrepared(boolean layoutIsPrepared) {
-		_collectionViewDataFlags.layoutIsPrepared = layoutIsPrepared;
-	}
-
 	void validateItemCounts() {
-		if (!_collectionViewDataFlags.itemCountsAreValid) {
+		if (!this.itemCountsAreValid) {
 		    this.updateItemCounts();
 		}
 	}
@@ -163,18 +151,18 @@ class CollectionViewData extends MObject {
 		// query how many sections there will be
 		_numSections = 1;
 
-		if (OptionalInterfaceHelper.hasImplemented(this.getCollectionView().getDataSource(), "numberOfSectionsInCollectionView", CollectionView.class)) {
+		if (OptionalInterfaceHelper.hasImplemented(this.getCollectionView().getDataSource(), CollectionView.DataSource.class, "numberOfSectionsInCollectionView", CollectionView.class)) {
 		    _numSections = this.getCollectionView().getDataSource().numberOfSectionsInCollectionView(this.getCollectionView());
 		}
 
 		if (_numSections <= 0) { // early bail-out
 		    _numItems = 0;
 		    _sectionItemCounts = null;
-		    _collectionViewDataFlags.itemCountsAreValid = true;
+		    this.itemCountsAreValid = true;
 		    return;
 		}
 
-		_sectionItemCounts = new int[_numItems];
+		_sectionItemCounts = new int[_numSections];
 
 		// query cells per section
 		_numItems = 0;
@@ -184,7 +172,7 @@ class CollectionViewData extends MObject {
 		    _numItems += cellCount;
 		}
 
-		_collectionViewDataFlags.itemCountsAreValid = true;
+		this.itemCountsAreValid = true;
 	}
 
 	/* Setters & Getters */
@@ -211,7 +199,7 @@ class CollectionViewData extends MObject {
 	}
 
 	private void setCachedLayoutAttributes(List<CollectionViewLayout.Attributes> cachedLayoutAttributes) {
-		if(this._cachedLayoutAttributes == null) {
+		if(cachedLayoutAttributes == null) {
 			this._cachedLayoutAttributes = new ArrayList<>();
 		} else {
 			this._cachedLayoutAttributes.clear();

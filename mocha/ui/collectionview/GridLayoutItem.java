@@ -39,7 +39,7 @@ class GridLayoutItem extends MObject {
 	}
 
 	public void setItemFrame(mocha.graphics.Rect itemFrame) {
-		if(this.itemFrame != null) {
+		if(itemFrame != null) {
 			this.itemFrame = itemFrame.copy();
 		} else {
 			this.itemFrame = mocha.graphics.Rect.zero();

@@ -1,16 +1,14 @@
 package mocha.ui.collectionview;
 
-import com.google.ads.x;
-import com.google.ads.y;
+import mocha.foundation.Copying;
 import mocha.foundation.MObject;
 import mocha.graphics.Point;
 import mocha.graphics.Rect;
-import mocha.ui.collectionview.CollectionViewFlowLayout;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class GridLayoutRow extends MObject {
+class GridLayoutRow extends MObject implements Copying<GridLayoutRow> {
 	private GridLayoutSection _section;
 	private List<GridLayoutItem> _items;
 	private mocha.graphics.Size _rowSize;
@@ -43,8 +41,8 @@ class GridLayoutRow extends MObject {
 		_rowFrame = mocha.graphics.Rect.zero();
 	}
 
-	GridLayoutRow snapshot() throws IllegalAccessException, InstantiationException {
-		GridLayoutRow snapshotRow = this.getClass().newInstance();
+	public GridLayoutRow copy() {
+		GridLayoutRow snapshotRow = new GridLayoutRow();
 		snapshotRow.setSection(this.getSection());
 		snapshotRow.setItems(this.getItems());
 		snapshotRow.setRowSize(this.getRowSize());
@@ -97,7 +95,7 @@ class GridLayoutRow extends MObject {
 		        if (!this.getFixedItemSize()) {
 		            GridLayoutItem item = this._items.get(Math.min(itemIndex, this.itemCount() - 1));
 		            nextItemSize = isHorizontal ? item.getItemFrame().size.height : item.getItemFrame().size.width;
-		        }else {
+		        } else {
 		            nextItemSize = isHorizontal ? this.getSection().getItemSize().height : this.getSection().getItemSize().width;
 		        }
 
@@ -153,23 +151,32 @@ class GridLayoutRow extends MObject {
 		        if (isHorizontal) {
 		            itemFrame.origin.y = itemOffset.y;
 					itemOffset.y += itemFrame.size.height + this.getSection().getVerticalInterstice();
+
 		            if (horizontalAlignment == CollectionViewFlowLayout.FlowLayoutAlignment.JUSTIFY) {
 						itemOffset.y += interSpacing;
 		            }
-		        }else {
+		        } else {
 		            itemFrame.origin.x = itemOffset.x;
 					itemOffset.x += itemFrame.size.width + this.getSection().getHorizontalInterstice();
+
 		            if (horizontalAlignment == CollectionViewFlowLayout.FlowLayoutAlignment.JUSTIFY) {
 						itemOffset.x += interSpacing;
 		            }
 		        }
 
-		        item.setItemFrame(itemFrame); // might call nil; don't care
-		        rects.add(itemFrame);
+				if(item != null) {
+					item.setItemFrame(itemFrame);
+				}
+
+				if(rects != null) {
+					rects.add(itemFrame.copy());
+				}
+
 		        frame = frame.union(itemFrame);
 		    }
+
 		    _rowSize = frame.size.copy();
-		    //        _rowFrame = frame; // set externally
+		    // _rowFrame = frame; // set externally
 		    _isValid = true;
 		}
 
@@ -216,7 +223,7 @@ class GridLayoutRow extends MObject {
 	}
 
 	public void setRowSize(mocha.graphics.Size rowSize) {
-		if(this._rowSize != null) {
+		if(rowSize != null) {
 			this._rowSize = rowSize.copy();
 		} else {
 			this._rowSize = mocha.graphics.Size.zero();
@@ -232,7 +239,7 @@ class GridLayoutRow extends MObject {
 	}
 
 	public void setRowFrame(mocha.graphics.Rect rowFrame) {
-		if(this._rowFrame != null) {
+		if(rowFrame != null) {
 			this._rowFrame = rowFrame.copy();
 		} else {
 			this._rowFrame = mocha.graphics.Rect.zero();

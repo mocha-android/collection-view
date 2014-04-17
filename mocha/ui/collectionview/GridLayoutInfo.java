@@ -136,7 +136,7 @@ class GridLayoutInfo extends MObject {
 	}
 
 	public void setContentSize(mocha.graphics.Size contentSize) {
-		if(this.contentSize != null) {
+		if(contentSize != null) {
 			this.contentSize = contentSize.copy();
 		} else {
 			this.contentSize = mocha.graphics.Size.zero();

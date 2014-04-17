@@ -24,23 +24,25 @@ abstract public class CollectionViewController extends mocha.ui.ViewController i
 		super.loadView();
 
 		this.collectionView = new CollectionView(this.getView().getBounds(), this.collectionViewLayout);
-		this.getCollectionView().setDelegate(this);
-		this.getCollectionView().setDataSource(this);
+		this.collectionView.setDelegate(this);
+		this.collectionView.setDataSource(this);
 	}
 
 	protected void viewDidLoad() {
 		super.viewDidLoad();
 
-		this.getView().addSubview(this.getCollectionView());
-		this.getCollectionView().setFrame(this.getView().getBounds());
-		this.getCollectionView().setAutoresizing(View.Autoresizing.FLEXIBLE_SIZE);
+		View view = this.getView();
+
+		view.addSubview(this.collectionView);
+		this.collectionView.setFrame(view.getBounds());
+		this.collectionView.setAutoresizing(View.Autoresizing.FLEXIBLE_SIZE);
 	}
 
 	public void viewWillAppear(boolean animated) {
 		super.viewWillAppear(animated);
 
 		if (this.appearsFirstTime) {
-		    collectionView.reloadData();
+		    this.collectionView.reloadData();
 		    this.appearsFirstTime = false;
 		}
 

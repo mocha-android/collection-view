@@ -7,7 +7,7 @@ import mocha.ui.View;
 
 import java.util.List;
 
-class CollectionViewCell extends CollectionReusableView implements Highlightable {
+public class CollectionViewCell extends CollectionReusableView implements Highlightable {
 	private View contentView;
 	private View backgroundView;
 	private View selectedBackgroundView;
@@ -55,7 +55,10 @@ class CollectionViewCell extends CollectionReusableView implements Highlightable
 	}
 
 	void updateBackgroundView(boolean highlight) {
-		this.selectedBackgroundView.setAlpha(highlight ? 1.0f : 0.0f);
+		if(this.selectedBackgroundView != null) {
+			this.selectedBackgroundView.setAlpha(highlight ? 1.0f : 0.0f);
+		}
+
 		this.setHighlightedForViews(highlight, this.getContentView().getSubviews());
 	}
 

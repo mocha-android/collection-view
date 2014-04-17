@@ -54,6 +54,7 @@ public class CollectionView extends ScrollView {
 	private mocha.foundation.IndexPath _touchingIndexPath;
 	private mocha.foundation.IndexPath _currentIndexPath;
 	private FinishedBlock _updateCompletionHandler;
+	private boolean hasLoadedData;
 
 	public interface FinishedBlock {
 
@@ -224,6 +225,7 @@ public class CollectionView extends ScrollView {
 	public void registerClassForCellWithReuseIdentifier(Class<? extends CollectionViewCell> cellClass, String identifier) {
 		Assert.condition(cellClass != null, "Cell class must not be null");
 		Assert.condition(identifier != null, "Identifier must not be null");
+		MWarn("CV_TEST Registering %s to %s on %s", identifier, cellClass, this);
 		this._cellClassDict.put(identifier, cellClass);
 	}
 
@@ -237,17 +239,18 @@ public class CollectionView extends ScrollView {
 
 	public CollectionViewCell dequeueReusableCellWithReuseIdentifierForIndexPath(String identifier, IndexPath indexPath) {
 		// de-queue cell (if available)
-		List<CollectionViewCell> reusableCells = _cellReuseQueues.get(identifier);
+		List<CollectionViewCell> reusableCells = this._cellReuseQueues.get(identifier);
 		CollectionViewCell cell = Lists.last(reusableCells);
 		CollectionViewLayout.Attributes attributes = this._layout.layoutAttributesForItemAtIndexPath(indexPath);
 
 		if (cell != null) {
 		    reusableCells.remove(reusableCells.size() - 1);
 		} else {
-			Class<? extends CollectionViewCell> cellClass = _cellClassDict.get(identifier);
+			Class<? extends CollectionViewCell> cellClass = this._cellClassDict.get(identifier);
 
 			if (cellClass == null) {
-				throw new IllegalArgumentException(String.format("Class not registered for identifier %s", identifier));
+				MWarn("CV_TEST Failed to dequeue %s on %s", identifier, this);
+				throw new IllegalArgumentException(String.format("Class not registered for identifier %s %s", identifier, this._cellClassDict));
 			}
 
 			try {
@@ -319,6 +322,7 @@ public class CollectionView extends ScrollView {
 
 	void reloadData() {
 		if (_reloadingSuspendedCount != 0) return;
+		this.hasLoadedData = true;
 		this.invalidateLayout();
 
 		for(CollectionReusableView view : this._allVisibleViewsDict.values()) {
@@ -346,16 +350,19 @@ public class CollectionView extends ScrollView {
 	}
 
 	public void setCollectionViewLayout(final CollectionViewLayout layout, boolean animated) {
-		if (layout == this._layout) return;
-
 		if(layout == null) {
 			throw new IllegalArgumentException("CollectionViewLayout must not be null");
 		}
 
+		if (layout == this._layout) return;
+
 		// not sure it was it original code, but here this prevents crash
 		// in case we switch layout before previous one was initially loaded
 		if (this.getBounds().empty() || !this._collectionViewFlags.doneFirstLayout) {
-			this._layout.setCollectionView(null);
+			if(this._layout != null) {
+				this._layout.setCollectionView(null);
+			}
+
 		    this._collectionViewData = new CollectionViewData(this, layout);
 		    layout.setCollectionView(this);
 		    this._layout = layout;
@@ -597,7 +604,12 @@ public class CollectionView extends ScrollView {
 
 	public IndexPath indexPathForItemAtPoint(mocha.graphics.Point point) {
 		CollectionViewLayout.Attributes attributes = Lists.last(this._layout.layoutAttributesForElementsInRect(new mocha.graphics.Rect(point.x, point.y, 1, 1)));
-		return attributes.getIndexPath();
+
+		if(attributes == null) {
+			return null;
+		} else {
+			return attributes.getIndexPath();
+		}
 	}
 
 	public IndexPath indexPathForCell(CollectionViewCell cell) {
@@ -769,6 +781,10 @@ public class CollectionView extends ScrollView {
 	public void layoutSubviews() {
 		super.layoutSubviews();
 
+		if (!this.hasLoadedData) {
+			return;
+		}
+
 		// Adding alpha animation to make the relayouting smooth
 		if (this._collectionViewFlags.fadeCellsForBoundsChange) {
 //		    CATransition transition = CATransition.animation();
@@ -786,8 +802,9 @@ public class CollectionView extends ScrollView {
 //		    CATransaction.setDisableActions(true);
 		}
 
-		if (!_collectionViewFlags.updatingLayout)
-		    this.updateVisibleCellsNow(true);
+		if (!_collectionViewFlags.updatingLayout) {
+			this.updateVisibleCellsNow(true);
+		}
 
 		if (this._collectionViewFlags.fadeCellsForBoundsChange) {
 //		    CATransaction.commit();
@@ -795,6 +812,7 @@ public class CollectionView extends ScrollView {
 
 		// do we need to update contentSize?
 		Size contentSize = _collectionViewData.collectionViewContentRect().size;
+		MLog("CV_TEST, CONTENT_SIZE: " + contentSize);
 		if (!this.getContentSize().equals(contentSize)) {
 		    this.setContentSize(contentSize);
 
@@ -996,7 +1014,11 @@ public class CollectionView extends ScrollView {
 		    IndexPath indexPath = this.indexPathForItemAtPoint(touchPoint);
 
 		    // moving out of bounds
-		    if (this._currentIndexPath.equals(this._touchingIndexPath) && !indexPath.equals(this._touchingIndexPath) && this.unhighlightItemAtIndexPathAnimatedNotifyDelegateShouldCheckHighlight(this._touchingIndexPath, true, true, true)) {
+		    if (
+					this._currentIndexPath.equals(this._touchingIndexPath) &&
+					!indexPath.equals(this._touchingIndexPath) &&
+					this.unhighlightItemAtIndexPathAnimatedNotifyDelegateShouldCheckHighlight(this._touchingIndexPath, true, true, true)
+				) {
 				this._currentIndexPath = indexPath;
 		        // moving back into the original touching cell
 		    } else if (!this._currentIndexPath.equals(this._touchingIndexPath) && indexPath.equals(this._touchingIndexPath)) {
@@ -1200,24 +1222,25 @@ public class CollectionView extends ScrollView {
 	public void setDelegate(Delegate delegate) {
 		this._delegate = delegate;
 
+		//  Managing the Selected Cells
+		this._collectionViewFlags.delegateShouldSelectItemAtIndexPath = OptionalInterfaceHelper.hasImplemented(delegate, Delegate.class, "collectionViewShouldSelectItemAtIndexPath", CollectionView.class, IndexPath.class);
+		this._collectionViewFlags.delegateShouldDeselectItemAtIndexPath = OptionalInterfaceHelper.hasImplemented(delegate, Delegate.class, "collectionViewShouldDeselectItemAtIndexPath", CollectionView.class, IndexPath.class);
+		this._collectionViewFlags.delegateDidSelectItemAtIndexPath = OptionalInterfaceHelper.hasImplemented(delegate, Delegate.class, "collectionViewDidSelectItemAtIndexPath", CollectionView.class, IndexPath.class);
+		this._collectionViewFlags.delegateDidDeselectItemAtIndexPath = OptionalInterfaceHelper.hasImplemented(delegate, Delegate.class, "collectionViewDidDeselectItemAtIndexPath", CollectionView.class, IndexPath.class);
+
+		//  Managing Cell Highlighting
+		this._collectionViewFlags.delegateShouldHighlightItemAtIndexPath = OptionalInterfaceHelper.hasImplemented(delegate, Delegate.class, "collectionViewShouldHighlightItemAtIndexPath", CollectionView.class, IndexPath.class);
+		this._collectionViewFlags.delegateDidHighlightItemAtIndexPath = OptionalInterfaceHelper.hasImplemented(delegate, Delegate.class, "collectionViewDidHighlightItemAtIndexPath", CollectionView.class, IndexPath.class);
+		this._collectionViewFlags.delegateDidUnhighlightItemAtIndexPath = OptionalInterfaceHelper.hasImplemented(delegate, Delegate.class, "collectionViewDidUnhighlightItemAtIndexPath", CollectionView.class, IndexPath.class);
+
+		//  Tracking the Removal of Views
+		this._collectionViewFlags.delegateDidEndDisplayingCell = OptionalInterfaceHelper.hasImplemented(delegate, Delegate.class, "collectionViewDidEndDisplayingCellForItemAtIndexPath", CollectionView.class, CollectionViewCell.class, IndexPath.class);
+		this._collectionViewFlags.delegateDidEndDisplayingSupplementaryView = OptionalInterfaceHelper.hasImplemented(delegate, Delegate.class, "collectionViewDidEndDisplayingSupplementaryViewForElementOfKindAtIndexPath", CollectionView.class, CollectionReusableView.class, String.class, IndexPath.class);
+
+		// Notify our layout
 		if(this._layout != null) {
 			this._layout.collectionViewDelegateDidChange();
 		}
-
-		//  Managing the Selected Cells
-		this._collectionViewFlags.delegateShouldSelectItemAtIndexPath = OptionalInterfaceHelper.hasImplemented(delegate, "collectionViewShouldSelectItemAtIndexPath", CollectionView.class, IndexPath.class);
-		this._collectionViewFlags.delegateShouldDeselectItemAtIndexPath = OptionalInterfaceHelper.hasImplemented(delegate, "collectionViewShouldDeselectItemAtIndexPath", CollectionView.class, IndexPath.class);
-		this._collectionViewFlags.delegateDidSelectItemAtIndexPath = OptionalInterfaceHelper.hasImplemented(delegate, "collectionViewDidSelectItemAtIndexPath", CollectionView.class, IndexPath.class);
-		this._collectionViewFlags.delegateDidDeselectItemAtIndexPath = OptionalInterfaceHelper.hasImplemented(delegate, "collectionViewDidDeselectItemAtIndexPath", CollectionView.class, IndexPath.class);
-
-		//  Managing Cell Highlighting
-		this._collectionViewFlags.delegateShouldHighlightItemAtIndexPath = OptionalInterfaceHelper.hasImplemented(delegate, "collectionViewShouldHighlightItemAtIndexPath", CollectionView.class, IndexPath.class);
-		this._collectionViewFlags.delegateDidHighlightItemAtIndexPath = OptionalInterfaceHelper.hasImplemented(delegate, "collectionViewDidHighlightItemAtIndexPath", CollectionView.class, IndexPath.class);
-		this._collectionViewFlags.delegateDidUnhighlightItemAtIndexPath = OptionalInterfaceHelper.hasImplemented(delegate, "collectionViewDidUnhighlightItemAtIndexPath", CollectionView.class, IndexPath.class);
-
-		//  Tracking the Removal of Views
-		this._collectionViewFlags.delegateDidEndDisplayingCell = OptionalInterfaceHelper.hasImplemented(delegate, "collectionViewDidEndDisplayingCellForItemAtIndexPath", CollectionView.class, CollectionViewCell.class, IndexPath.class);
-		this._collectionViewFlags.delegateDidEndDisplayingSupplementaryView = OptionalInterfaceHelper.hasImplemented(delegate, "collectionViewDidEndDisplayingSupplementaryViewForElementOfKindAtIndexPath", CollectionView.class, CollectionReusableView.class, String.class, IndexPath.class);
 	}
 
 	public void setDataSource(DataSource dataSource) {
@@ -1225,10 +1248,10 @@ public class CollectionView extends ScrollView {
 		    _dataSource = dataSource;
 
 			// Getting Item and Section Metrics
-			this._collectionViewFlags.dataSourceNumberOfSections = OptionalInterfaceHelper.hasImplemented(dataSource, "numberOfSectionsInCollectionView", int.class);
+			this._collectionViewFlags.dataSourceNumberOfSections = OptionalInterfaceHelper.hasImplemented(dataSource, DataSource.class, "numberOfSectionsInCollectionView", CollectionView.class);
 
 		    // Getting Views for Items
-			this._collectionViewFlags.dataSourceViewForSupplementaryElement = OptionalInterfaceHelper.hasImplemented(dataSource, "collectionViewViewForSupplementaryElementOfKindAtIndexPath", CollectionView.class, String.class, IndexPath.class);
+			this._collectionViewFlags.dataSourceViewForSupplementaryElement = OptionalInterfaceHelper.hasImplemented(dataSource, DataSource.class, "collectionViewViewForSupplementaryElementOfKindAtIndexPath", CollectionView.class, String.class, IndexPath.class);
 		}
 	}
 
@@ -1250,7 +1273,8 @@ public class CollectionView extends ScrollView {
 	}
 
 	private void updateVisibleCellsNow(boolean now) {
-		List<CollectionViewLayout.Attributes> layoutAttributesArray = _collectionViewData.layoutAttributesForElementsInRect(this.getBounds());
+		List<CollectionViewLayout.Attributes> layoutAttributesArray = this._collectionViewData.layoutAttributesForElementsInRect(this.getBounds());
+		MLog("CV_TEST updateVisibleCells " + layoutAttributesArray + ", " + this.getBounds());
 
 		if (layoutAttributesArray == null || layoutAttributesArray.size() == 0) {
 		    // If our layout source isn't providing any layout information, we should just

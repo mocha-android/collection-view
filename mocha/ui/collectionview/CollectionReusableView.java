@@ -1,25 +1,27 @@
 package mocha.ui.collectionview;
 
-public class CollectionReusableView extends mocha.ui.View {
-	private String _reuseIdentifier;
+import mocha.graphics.Rect;
+import mocha.ui.View;
+
+public class CollectionReusableView extends View {
+	private String reuseIdentifier;
 	private CollectionView _collectionView;
 	private CollectionViewLayout.Attributes _layoutAttributes;
-	private ReusableViewFlagsStruct _reusableViewFlags = new ReusableViewFlagsStruct();
+	private boolean inUpdateAnimation;
 
-	private class ReusableViewFlagsStruct {
-		boolean inUpdateAnimation;
-
+	public CollectionReusableView(Rect frame) {
+		super(frame);
 	}
 
-	void prepareForReuse() {
+	public void prepareForReuse() {
 		this.setLayoutAttributes(null);
 	}
 
-	void applyLayoutAttributes(CollectionViewLayout.Attributes layoutAttributes) {
+	public void applyLayoutAttributes(CollectionViewLayout.Attributes layoutAttributes) {
 		if (layoutAttributes != _layoutAttributes) {
 		    _layoutAttributes = layoutAttributes;
 
-		    this.setBounds(new mocha.graphics.Rect(this.getBounds().origin, layoutAttributes.getSize()));
+		    this.setBounds(new Rect(this.getBounds().origin, layoutAttributes.getSize()));
 		    this.setCenter(layoutAttributes.getCenter());
 		    this.setHidden(layoutAttributes.getHidden());
 			this.setTransform(layoutAttributes.getTransform3D());
@@ -28,39 +30,35 @@ public class CollectionReusableView extends mocha.ui.View {
 		}
 	}
 
-	void willTransitionFromLayoutToLayout(CollectionViewLayout oldLayout, CollectionViewLayout newLayout) {
-		_reusableViewFlags.inUpdateAnimation = true;
+	public void willTransitionFromLayoutToLayout(CollectionViewLayout oldLayout, CollectionViewLayout newLayout) {
+		this.inUpdateAnimation = true;
 	}
 
-	void didTransitionFromLayoutToLayout(CollectionViewLayout oldLayout, CollectionViewLayout newLayout) {
-		_reusableViewFlags.inUpdateAnimation = false;
+	public void didTransitionFromLayoutToLayout(CollectionViewLayout oldLayout, CollectionViewLayout newLayout) {
+		this.inUpdateAnimation = false;
 	}
 
 	void setIndexPath(mocha.foundation.IndexPath indexPath) {
 
 	}
 
-	public CollectionReusableView(mocha.graphics.Rect frame) {
-		super(frame);
-	}
-
 	boolean isInUpdateAnimation() {
-		return _reusableViewFlags.inUpdateAnimation;
+		return this.inUpdateAnimation;
 	}
 
 	void setInUpdateAnimation(boolean inUpdateAnimation) {
-		_reusableViewFlags.inUpdateAnimation = inUpdateAnimation;
+		this.inUpdateAnimation = inUpdateAnimation;
 	}
 
 	/* Setters & Getters */
 	/* ========================================== */
 
 	String getReuseIdentifier() {
-		return this._reuseIdentifier;
+		return this.reuseIdentifier;
 	}
 
 	void setReuseIdentifier(String reuseIdentifier) {
-		this._reuseIdentifier = reuseIdentifier;
+		this.reuseIdentifier = reuseIdentifier;
 	}
 
 	CollectionView getCollectionView() {

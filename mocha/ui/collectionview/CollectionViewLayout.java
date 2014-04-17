@@ -27,16 +27,7 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		private boolean _hidden;
 		private mocha.foundation.IndexPath _indexPath;
 		private String _elementKind;
-		private String _representedElementKind;
-		private CollectionViewLayout.CollectionViewItemType _representedElementCategory;
-		private LayoutFlagsStruct _layoutFlags = new LayoutFlagsStruct();
 		private CollectionViewLayout.CollectionViewItemType _elementCategory;
-
-		private class LayoutFlagsStruct {
-			boolean isCellKind;
-			boolean isDecorationView;
-			boolean isHidden;
-		}
 
 		public static Attributes layoutAttributesForCellWithIndexPath(mocha.foundation.IndexPath indexPath) {
 			return layoutAttributesForCellWithIndexPath(Attributes.class, indexPath);
@@ -134,7 +125,7 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		}
 
 		public CollectionViewLayout.CollectionViewItemType representedElementCategory() {
-			return _elementCategory;
+			return this._elementCategory;
 		}
 
 		public String representedElementKind() {
@@ -146,13 +137,13 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		}
 
 		public void setFrame(mocha.graphics.Rect frame) {
-			if(this._frame != null) {
+			if(frame != null) {
 				this._frame = frame.copy();
 			} else {
 				this._frame = mocha.graphics.Rect.zero();
 			}
 
-			this._size = this._frame.size;
+			this._size = this._frame.size.copy();
 			this._center = new mocha.graphics.Point(this._frame.midX(), this._frame.midY());
 		}
 
@@ -197,7 +188,7 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		}
 
 		public void setCenter(mocha.graphics.Point center) {
-			if(this._center != null) {
+			if(center != null) {
 				this._center = center.copy();
 			} else {
 				this._center = mocha.graphics.Point.zero();
@@ -215,7 +206,7 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		}
 
 		public void setSize(mocha.graphics.Size size) {
-			if(this._size != null) {
+			if(size != null) {
 				this._size = size.copy();
 			} else {
 				this._size = mocha.graphics.Size.zero();
@@ -229,7 +220,11 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		}
 
 		public void setTransform3D(AffineTransform transform3D) {
-			this._transform3D = transform3D;
+			if(transform3D != null) {
+				this._transform3D = transform3D.copy();
+			} else {
+				this._transform3D = AffineTransform.identity();
+			}
 		}
 
 		public float getAlpha() {
@@ -273,19 +268,15 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		}
 
 		public String getRepresentedElementKind() {
-			return this._representedElementKind;
+			return this._elementKind;
 		}
 
 		private void setRepresentedElementKind(String representedElementKind) {
-			this._representedElementKind = representedElementKind;
+			this._elementKind = representedElementKind;
 		}
 
 		public CollectionViewLayout.CollectionViewItemType getRepresentedElementCategory() {
-			return this._representedElementCategory;
-		}
-
-		private void setRepresentedElementCategory(CollectionViewLayout.CollectionViewItemType representedElementCategory) {
-			this._representedElementCategory = representedElementCategory;
+			return this._elementCategory;
 		}
 
 		private CollectionViewLayout.CollectionViewItemType getElementCategory() {

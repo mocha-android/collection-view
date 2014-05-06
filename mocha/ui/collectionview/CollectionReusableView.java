@@ -4,9 +4,10 @@ import mocha.graphics.Rect;
 import mocha.ui.View;
 
 public class CollectionReusableView extends View {
-	private String reuseIdentifier;
-	private CollectionView _collectionView;
-	private CollectionViewLayout.Attributes _layoutAttributes;
+	String reuseIdentifier;
+
+	private CollectionView collectionView;
+	private CollectionViewLayoutAttributes layoutAttributes;
 	private boolean inUpdateAnimation;
 
 	public CollectionReusableView(Rect frame) {
@@ -17,16 +18,17 @@ public class CollectionReusableView extends View {
 		this.setLayoutAttributes(null);
 	}
 
-	public void applyLayoutAttributes(CollectionViewLayout.Attributes layoutAttributes) {
-		if (layoutAttributes != _layoutAttributes) {
-		    _layoutAttributes = layoutAttributes;
+	public void applyLayoutAttributes(CollectionViewLayoutAttributes layoutAttributes) {
+		if (layoutAttributes != this.layoutAttributes) {
+			this.setLayoutAttributes(layoutAttributes);
 
-		    this.setBounds(new Rect(this.getBounds().origin, layoutAttributes.getSize()));
-		    this.setCenter(layoutAttributes.getCenter());
-		    this.setHidden(layoutAttributes.getHidden());
-			this.setTransform(layoutAttributes.getTransform3D());
-		    this.getLayer().setZPosition(layoutAttributes.getZIndex());
-			this.setAlpha(layoutAttributes.getAlpha());
+			this.setFrame(layoutAttributes.frame);
+//		    this.setBounds(new Rect(this.getBounds().origin, layoutAttributes.getSize()));
+//		    this.setCenter(layoutAttributes.getCenter());
+			this.setHidden(layoutAttributes.hidden);
+			this.setTransform(layoutAttributes.transform3D);
+		    // this.getLayer().setZPosition(layoutAttributes.getZIndex());
+			this.setAlpha(layoutAttributes.alpha);
 		}
 	}
 
@@ -50,9 +52,6 @@ public class CollectionReusableView extends View {
 		this.inUpdateAnimation = inUpdateAnimation;
 	}
 
-	/* Setters & Getters */
-	/* ========================================== */
-
 	String getReuseIdentifier() {
 		return this.reuseIdentifier;
 	}
@@ -62,19 +61,25 @@ public class CollectionReusableView extends View {
 	}
 
 	CollectionView getCollectionView() {
-		return this._collectionView;
+		return this.collectionView;
 	}
 
 	void setCollectionView(CollectionView collectionView) {
-		this._collectionView = collectionView;
+		this.collectionView = collectionView;
 	}
 
-	CollectionViewLayout.Attributes getLayoutAttributes() {
-		return this._layoutAttributes;
+	CollectionViewLayoutAttributes getLayoutAttributes() {
+		return this.layoutAttributes;
 	}
 
-	void setLayoutAttributes(CollectionViewLayout.Attributes layoutAttributes) {
-		this._layoutAttributes = layoutAttributes;
+	void setLayoutAttributes(CollectionViewLayoutAttributes layoutAttributes) {
+		if(this.layoutAttributes != layoutAttributes) {
+			if(this.layoutAttributes != null && this.collectionView != null) {
+				// this.collectionView.getCollectionViewLayout().enqueueLayoutAttributes(this.layoutAttributes);
+			}
+
+			this.layoutAttributes = layoutAttributes;
+		}
 	}
 
 }

@@ -17,7 +17,7 @@ class GridLayoutRow extends MObject implements Copying<GridLayoutRow> {
 	private boolean _complete;
 	private boolean _fixedItemSize;
 	private int _itemCount;
-	private boolean _isValid;
+	private boolean _valid;
 
 	void addItem(GridLayoutItem item) {
 		_items.add(item);
@@ -34,9 +34,9 @@ class GridLayoutRow extends MObject implements Copying<GridLayoutRow> {
 	}
 
 	void invalidate() {
-		_isValid = false;
-		_rowSize = mocha.graphics.Size.zero();
-		_rowFrame = mocha.graphics.Rect.zero();
+		this._valid = false;
+		this._rowSize = mocha.graphics.Size.zero();
+		this._rowFrame = mocha.graphics.Rect.zero();
 	}
 
 	public GridLayoutRow copy() {
@@ -63,7 +63,7 @@ class GridLayoutRow extends MObject implements Copying<GridLayoutRow> {
 	List<Rect> layoutRowAndGenerateRectArray(boolean generateRectArray) {
 		List<Rect> rects = generateRectArray ? new ArrayList<Rect>() : null;
 
-		if(this._isValid && !generateRectArray) {
+		if(this._valid && !generateRectArray) {
 			return rects;
 		}
 
@@ -91,6 +91,7 @@ class GridLayoutRow extends MObject implements Copying<GridLayoutRow> {
 		int usedItemCount = 0;
 		int itemIndex = 0;
 		float spacing = isHorizontal ? section.getVerticalInterstice() : section.getHorizontalInterstice();
+
 		// the last row should justify as if it is filled with more (invisible) items so that the whole
 		// UICollectionView feels more like a grid than a random line of blocks
 		while (itemIndex < this.itemCount() || isLastRow) {
@@ -127,8 +128,7 @@ class GridLayoutRow extends MObject implements Copying<GridLayoutRow> {
 		Point itemOffset = Point.zero();
 		if (horizontalAlignment == GridLayoutAlignmentOptions.Alignment.MAX) {
 			itemOffset.x += leftOverSpace;
-		} else if (horizontalAlignment == GridLayoutAlignmentOptions.Alignment.MID ||
-				(horizontalAlignment == GridLayoutAlignmentOptions.Alignment.JUSTIFY && usedItemCount == 1)) {
+		} else if (horizontalAlignment == GridLayoutAlignmentOptions.Alignment.MID || (horizontalAlignment == GridLayoutAlignmentOptions.Alignment.JUSTIFY && usedItemCount == 1)) {
 			// Special case one item row to split leftover space in half
 			itemOffset.x += leftOverSpace / 2;
 		}
@@ -179,17 +179,17 @@ class GridLayoutRow extends MObject implements Copying<GridLayoutRow> {
 			frame = frame.union(itemFrame);
 		}
 
-		_rowSize = frame.size.copy();
+		this._rowSize = frame.size.copy();
 		// _rowFrame = frame; // set externally
-		_isValid = true;
+		this._valid = true;
 
 		return rects;
 	}
 
 	int itemCount() {
 		if (this.getFixedItemSize()) {
-		    return _itemCount;
-		}else {
+		    return this._itemCount;
+		} else {
 		    return this.getItems().size();
 		}
 	}

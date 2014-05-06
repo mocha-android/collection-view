@@ -2,11 +2,13 @@ package mocha.ui.collectionview;
 
 import mocha.foundation.Assert;
 import mocha.foundation.IndexPath;
+import mocha.graphics.Size;
+import mocha.ui.EdgeInsets;
 import mocha.ui.View;
 
 import java.util.List;
 
-abstract public class CollectionViewController extends mocha.ui.ViewController implements CollectionView.Delegate, CollectionView.DataSource {
+abstract public class CollectionViewController extends mocha.ui.ViewController implements CollectionView.Delegate, CollectionView.DataSource, CollectionViewFlowLayout.CollectionViewDelegateFlowLayout, FastFlowLayout.Delegate {
 	private CollectionView collectionView;
 	private boolean clearsSelectionOnViewWillAppear;
 	private boolean appearsFirstTime;
@@ -129,6 +131,36 @@ abstract public class CollectionViewController extends mocha.ui.ViewController i
 	@NotImplemented
 	public void collectionViewDidEndDisplayingSupplementaryViewForElementOfKindAtIndexPath(CollectionView collectionView, CollectionReusableView view, String elementKind, IndexPath indexPath) {
 
+	}
+
+	@NotImplemented
+	public Size collectionViewLayoutReferenceSizeForFooterInSection(CollectionView collectionView, CollectionViewLayout collectionViewLayout, int section) {
+		return null;
+	}
+
+	@NotImplemented
+	public Size collectionViewLayoutSizeForItemAtIndexPath(CollectionView collectionView, CollectionViewLayout collectionViewLayout, IndexPath indexPath) {
+		return null;
+	}
+
+	@NotImplemented
+	public EdgeInsets collectionViewLayoutInsetForSectionAtIndex(CollectionView collectionView, CollectionViewLayout collectionViewLayout, int section) {
+		return null;
+	}
+
+	@NotImplemented
+	public float collectionViewLayoutMinimumLineSpacingForSectionAtIndex(CollectionView collectionView, CollectionViewLayout collectionViewLayout, int section) {
+		return 0;
+	}
+
+	@NotImplemented
+	public float collectionViewLayoutMinimumInteritemSpacingForSectionAtIndex(CollectionView collectionView, CollectionViewLayout collectionViewLayout, int section) {
+		return 0;
+	}
+
+	@NotImplemented
+	public Size collectionViewLayoutReferenceSizeForHeaderInSection(CollectionView collectionView, CollectionViewLayout collectionViewLayout, int section) {
+		return null;
 	}
 
 }

@@ -14,7 +14,7 @@ class CollectionViewData extends MObject {
 	private mocha.graphics.Size _contentSize;
 	private CollectionView _collectionView;
 	private CollectionViewLayout _layout;
-	private List<CollectionViewLayout.Attributes> _cachedLayoutAttributes;
+	private List<CollectionViewLayoutAttributes> _cachedLayoutAttributes;
 	private boolean contentSizeIsValid;
 	private boolean itemCountsAreValid;
 	private boolean layoutIsPrepared;
@@ -33,8 +33,8 @@ class CollectionViewData extends MObject {
 		if (_validLayoutRect == null || !_validLayoutRect.equals(rect)) {
 		    _validLayoutRect = rect.copy();
 		    // we only want cell layoutAttributes & supplementaryView layoutAttributes
-			this._cachedLayoutAttributes = Lists.filteredList(this.getLayout().layoutAttributesForElementsInRect(rect), new Lists.Filter<CollectionViewLayout.Attributes>() {
-				public boolean filter(CollectionViewLayout.Attributes item) {
+			this._cachedLayoutAttributes = Lists.filteredList(this.getLayout().layoutAttributesForElementsInRect(rect), new Lists.Filter<CollectionViewLayoutAttributes>() {
+				public boolean filter(CollectionViewLayoutAttributes item) {
 					return item != null && (item.isCell() || item.isSupplementaryView() || item.isDecorationView());
 				}
 			});
@@ -50,7 +50,13 @@ class CollectionViewData extends MObject {
 	}
 
 	int globalIndexForItemInSection(int item, int section) {
-		return this.numberOfItemsBeforeSection(section) + item;
+		if(section >= this._sectionItemCounts.length) {
+			return -1;
+		} else if(item >= this._sectionItemCounts[section]) {
+			return -1;
+		} else {
+			return this.numberOfItemsBeforeSection(section) + item;
+		}
 	}
 
 	mocha.foundation.IndexPath indexPathForItemAtGlobalIndex(int index) {
@@ -71,7 +77,7 @@ class CollectionViewData extends MObject {
 		return mocha.foundation.IndexPath.withItemInSection(item, section);
 	}
 
-	List<CollectionViewLayout.Attributes> layoutAttributesForElementsInRect(Rect rect) {
+	List<CollectionViewLayoutAttributes> layoutAttributesForElementsInRect(Rect rect) {
 		this.validateLayoutInRect(rect);
 		return this.getCachedLayoutAttributes();
 	}
@@ -129,10 +135,9 @@ class CollectionViewData extends MObject {
 	}
 
 	void prepareToLoadData() {
-		MLog("CV_TEST - PREPARE TO LOAD: " + this.layoutIsPrepared);
 		if (!this.layoutIsPrepared) {
 		    this.getLayout().prepareLayout();
-		    _contentSize = this.getLayout().collectionViewContentSize().copy();
+			this._contentSize = this.getLayout().collectionViewContentSize().copy();
 			this.layoutIsPrepared = true;
 		}
 	}
@@ -194,11 +199,11 @@ class CollectionViewData extends MObject {
 		this._layout = layout;
 	}
 
-	private List<CollectionViewLayout.Attributes> getCachedLayoutAttributes() {
+	private List<CollectionViewLayoutAttributes> getCachedLayoutAttributes() {
 		return this._cachedLayoutAttributes;
 	}
 
-	private void setCachedLayoutAttributes(List<CollectionViewLayout.Attributes> cachedLayoutAttributes) {
+	private void setCachedLayoutAttributes(List<CollectionViewLayoutAttributes> cachedLayoutAttributes) {
 		if(cachedLayoutAttributes == null) {
 			this._cachedLayoutAttributes = new ArrayList<>();
 		} else {

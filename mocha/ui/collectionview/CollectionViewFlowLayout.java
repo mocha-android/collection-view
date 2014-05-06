@@ -113,22 +113,18 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 		this._gridLayoutFlags.delegateReferenceSizeForFooter = OptionalInterfaceHelper.hasImplemented(flowLayoutDelegate, CollectionViewDelegateFlowLayout.class, "collectionViewLayoutReferenceSizeForFooterInSection", CollectionView.class, CollectionViewLayout.class, int.class);
 	}
 
-	public List<Attributes> layoutAttributesForElementsInRect(mocha.graphics.Rect rect) {
+	public List<CollectionViewLayoutAttributes> layoutAttributesForElementsInRect(mocha.graphics.Rect rect) {
 		// Apple calls _layoutAttributesForItemsInRect
 		if (_data == null) this.prepareLayout();
 
-		List<Attributes> layoutAttributesArray = new ArrayList<>();
+		List<CollectionViewLayoutAttributes> layoutAttributesArray = new ArrayList<>();
 
 
 		List<GridLayoutSection> sections = _data.getSections();
 		int sectionsCount = sections.size();
 
-		MWarn("CV_TEST layoutAttributesForElementsInRect 1: " + sectionsCount + ", " + rect);
-
 		for(int sectionIndex = 0; sectionIndex < sectionsCount; sectionIndex++) {
 			GridLayoutSection section = sections.get(sectionIndex);
-
-			MLog("CV_TEST layoutAttributesForElementsInRect 2 - section: " + section.getFrame() + ", " + section.getRows());
 
 			if (section.getFrame().intersects(rect)) {
 				// if we have fixed size, calculate item frames only once.
@@ -139,7 +135,7 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 				normalizedHeaderFrame.origin.x += section.getFrame().origin.x;
 				normalizedHeaderFrame.origin.y += section.getFrame().origin.y;
 				if (!normalizedHeaderFrame.empty() && normalizedHeaderFrame.intersects(rect)) {
-					Attributes layoutAttributes = Attributes.layoutAttributesForSupplementaryViewOfKindWithIndexPath(this.layoutAttributesClass(), PSTCollectionElementKindSectionHeader, IndexPath.withItemInSection(0, sectionIndex));
+					CollectionViewLayoutAttributes layoutAttributes = this.dequeueLayoutAttributesForSupplementaryViewOfKind(PSTCollectionElementKindSectionHeader, IndexPath.withItemInSection(0, sectionIndex));
 					layoutAttributes.setFrame(normalizedHeaderFrame);
 					layoutAttributesArray.add(layoutAttributes);
 				}
@@ -164,7 +160,7 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 						int itemCount = row.getItemCount();
 
 						for (int itemIndex = 0; itemIndex < itemCount; itemIndex++) {
-							Attributes layoutAttributes;
+							CollectionViewLayoutAttributes layoutAttributes;
 							int sectionItemIndex;
 							Rect itemFrame;
 
@@ -180,10 +176,9 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 							Rect normalizedItemFrame = new Rect(normalizedRowFrame.origin.x + itemFrame.origin.x, normalizedRowFrame.origin.y + itemFrame.origin.y, itemFrame.size.width, itemFrame.size.height);
 
 							if (normalizedItemFrame.intersects(rect)) {
-								layoutAttributes = Attributes.layoutAttributesForCellWithIndexPath(this.layoutAttributesClass(), IndexPath.withItemInSection(sectionItemIndex, sectionIndex));
+								layoutAttributes = this.dequeueLayoutAttributesForCell(IndexPath.withItemInSection(sectionItemIndex, sectionIndex));
 								layoutAttributes.setFrame(normalizedItemFrame);
 								layoutAttributesArray.add(layoutAttributes);
-								MWarn("CV_TEST ADDING: " + sectionItemIndex + ", " + normalizedItemFrame);
 							}
 						}
 					}
@@ -193,19 +188,17 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 				normalizedFooterFrame.origin.x += section.getFrame().origin.x;
 				normalizedFooterFrame.origin.y += section.getFrame().origin.y;
 				if (!normalizedFooterFrame.empty() && normalizedFooterFrame.intersects(rect)) {
-					Attributes layoutAttributes = Attributes.layoutAttributesForSupplementaryViewOfKindWithIndexPath(this.layoutAttributesClass(), PSTCollectionElementKindSectionFooter, IndexPath.withItemInSection(0, sectionIndex));
+					CollectionViewLayoutAttributes layoutAttributes = this.dequeueLayoutAttributesForSupplementaryViewOfKind(PSTCollectionElementKindSectionFooter, IndexPath.withItemInSection(0, sectionIndex));
 					layoutAttributes.setFrame(normalizedFooterFrame);
 					layoutAttributesArray.add(layoutAttributes);
 				}
 			}
 		}
 
-		MWarn("CV_TEST layoutAttributesArray: " + layoutAttributesArray);
-
 		return layoutAttributesArray;
 	}
 
-	public CollectionViewLayout.Attributes layoutAttributesForItemAtIndexPath(mocha.foundation.IndexPath indexPath) {
+	public CollectionViewLayoutAttributes layoutAttributesForItemAtIndexPath(mocha.foundation.IndexPath indexPath) {
 		if (_data == null) this.prepareLayout();
 
 		GridLayoutSection section = _data.getSections().get(indexPath.section);
@@ -224,7 +217,7 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 			itemFrame = item.getItemFrame();
 		}
 
-		CollectionViewLayout.Attributes layoutAttributes = Attributes.layoutAttributesForCellWithIndexPath(this.layoutAttributesClass(), indexPath);
+		CollectionViewLayoutAttributes layoutAttributes = this.dequeueLayoutAttributesForCell(indexPath);
 
 		if (row != null) {
 			// calculate item rect
@@ -236,11 +229,11 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 		return layoutAttributes;
 	}
 
-	public CollectionViewLayout.Attributes layoutAttributesForSupplementaryViewOfKindAtIndexPath(String kind, mocha.foundation.IndexPath indexPath) {
+	public CollectionViewLayoutAttributes layoutAttributesForSupplementaryViewOfKindAtIndexPath(String kind, mocha.foundation.IndexPath indexPath) {
 		if (_data == null) this.prepareLayout();
 
 		int sectionIndex = indexPath.section;
-		CollectionViewLayout.Attributes layoutAttributes = null;
+		CollectionViewLayoutAttributes layoutAttributes = null;
 
 		if (sectionIndex < _data.getSections().size()) {
 			GridLayoutSection section = _data.getSections().get(sectionIndex);
@@ -256,18 +249,19 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 				normalizedFrame.origin.x += section.getFrame().origin.x;
 				normalizedFrame.origin.y += section.getFrame().origin.y;
 
-				layoutAttributes = Attributes.layoutAttributesForSupplementaryViewOfKindWithIndexPath(this.layoutAttributesClass(), kind, mocha.foundation.IndexPath.withItemInSection(0, sectionIndex));
+				layoutAttributes = this.dequeueLayoutAttributesForSupplementaryViewOfKind(kind, mocha.foundation.IndexPath.withItemInSection(0, sectionIndex));
 				layoutAttributes.setFrame(normalizedFrame);
 			}
 		}
+
 		return layoutAttributes;
 	}
 
-	public Attributes layoutAttributesForDecorationViewOfKindAtIndexPath(String kind, IndexPath indexPath) {
+	public CollectionViewLayoutAttributes layoutAttributesForDecorationViewOfKindAtIndexPath(String kind, IndexPath indexPath) {
 		return null;
 	}
 
-	CollectionViewLayout.Attributes layoutAttributesForDecorationViewWithReuseIdentifierAtIndexPath(String identifier, mocha.foundation.IndexPath indexPath) {
+	CollectionViewLayoutAttributes layoutAttributesForDecorationViewWithReuseIdentifierAtIndexPath(String identifier, mocha.foundation.IndexPath indexPath) {
 		return null;
 	}
 
@@ -277,7 +271,7 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 		return _data.getContentSize();
 	}
 
-	CollectionReusableView decorationViewForCollectionViewWithReuseIdentifierIndexPath(CollectionView collectionView, String reuseIdentifier, IndexPath indexPath) {
+	public CollectionReusableView decorationViewForCollectionViewWithReuseIdentifierIndexPath(CollectionView collectionView, String reuseIdentifier, IndexPath indexPath) {
 		return null;
 	}
 

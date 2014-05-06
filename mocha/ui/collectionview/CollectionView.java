@@ -17,19 +17,19 @@ public class CollectionView extends ScrollView {
 	private boolean _allowsSelection;
 	private boolean _allowsMultipleSelection;
 	private CollectionViewLayout _layout;
-	private Set<IndexPath> _indexPathsForSelectedItems;
-	private Map<String,List<CollectionViewCell>> _cellReuseQueues;
-	private Map<String,List<CollectionReusableView>> _supplementaryViewReuseQueues;
-	private Map<String,List<CollectionReusableView>> _decorationViewReuseQueues;
-	private Set<IndexPath> _indexPathsForHighlightedItems;
+	private final Set<IndexPath> _indexPathsForSelectedItems;
+	private final Map<String,List<CollectionViewCell>> _cellReuseQueues;
+	private final Map<String,List<CollectionReusableView>> _supplementaryViewReuseQueues;
+	private final Map<String,List<CollectionReusableView>> _decorationViewReuseQueues;
+	private final Set<IndexPath> _indexPathsForHighlightedItems;
 	private int _reloadingSuspendedCount;
 	private CollectionReusableView _firstResponderView;
 	private mocha.ui.View _newContentView;
 	private int _firstResponderViewType;
 	private String _firstResponderViewKind;
 	private IndexPath _firstResponderIndexPath;
-	private Map<CollectionViewItemKey,CollectionReusableView> _allVisibleViewsDict;
-	private mocha.foundation.IndexPath _pendingSelectionIndexPath;
+	private final Map<CollectionViewItemKey,CollectionReusableView> _allVisibleViewsDict;
+	private IndexPath _pendingSelectionIndexPath;
 	private Set<IndexPath> _pendingDeselectionIndexPaths;
 	private CollectionViewData _collectionViewData;
 	private UpdateTransaction _update;
@@ -46,10 +46,10 @@ public class CollectionView extends ScrollView {
 	private List<CollectionViewUpdateItem> _originalDeleteItems;
 	private mocha.ui.Touch _currentTouch;
 	private boolean finished;
-	private Map<String,Class<? extends CollectionViewCell>> _cellClassDict;
-	private Map<String,Class<? extends CollectionReusableView>> _supplementaryViewClassDict;
+	private final Map<String,Class<? extends CollectionViewCell>> _cellClassDict;
+	private final Map<String,Class<? extends CollectionReusableView>> _supplementaryViewClassDict;
 	private mocha.graphics.Point _lastLayoutOffset;
-	private CollectionViewFlagsStruct _collectionViewFlags = new CollectionViewFlagsStruct();
+	private final CollectionViewFlagsStruct _collectionViewFlags = new CollectionViewFlagsStruct();
 	private CollectionView.Delegate _collectionViewDelegate;
 	private mocha.foundation.IndexPath _touchingIndexPath;
 	private mocha.foundation.IndexPath _currentIndexPath;
@@ -97,19 +97,19 @@ public class CollectionView extends ScrollView {
 
 	class UpdateAnimation {
 		CollectionReusableView view;
-		CollectionViewLayout.Attributes previousLayoutInfos;
-		CollectionViewLayout.Attributes newLayoutInfos;
+		CollectionViewLayoutAttributes previousLayoutInfos;
+		CollectionViewLayoutAttributes newLayoutInfos;
 
 		private UpdateAnimation() {
 		}
 
-		private UpdateAnimation(CollectionReusableView view, CollectionViewLayout.Attributes previousLayoutInfos, CollectionViewLayout.Attributes newLayoutInfos) {
+		private UpdateAnimation(CollectionReusableView view, CollectionViewLayoutAttributes previousLayoutInfos, CollectionViewLayoutAttributes newLayoutInfos) {
 			this.view = view;
 			this.previousLayoutInfos = previousLayoutInfos;
 			this.newLayoutInfos = newLayoutInfos;
 		}
 
-		private UpdateAnimation(CollectionViewLayout.Attributes previousLayoutInfos, CollectionViewLayout.Attributes newLayoutInfos) {
+		private UpdateAnimation(CollectionViewLayoutAttributes previousLayoutInfos, CollectionViewLayoutAttributes newLayoutInfos) {
 			this.previousLayoutInfos = previousLayoutInfos;
 			this.newLayoutInfos = newLayoutInfos;
 		}
@@ -199,12 +199,6 @@ public class CollectionView extends ScrollView {
 
 	}
 
-	public enum CollectionElementCategory {
-		CELL,
-		SUPPLEMENTARY_VIEW,
-		DECORATION_VIEW
-	}
-
 	public CollectionView(mocha.graphics.Rect frame, CollectionViewLayout layout) {
 		super(frame);
 
@@ -223,25 +217,32 @@ public class CollectionView extends ScrollView {
 	}
 
 	public void registerClassForCellWithReuseIdentifier(Class<? extends CollectionViewCell> cellClass, String identifier) {
-		Assert.condition(cellClass != null, "Cell class must not be null");
 		Assert.condition(identifier != null, "Identifier must not be null");
-		MWarn("CV_TEST Registering %s to %s on %s", identifier, cellClass, this);
-		this._cellClassDict.put(identifier, cellClass);
+
+		if(cellClass == null) {
+			this._cellClassDict.remove(identifier);
+		} else {
+			this._cellClassDict.put(identifier, cellClass);
+		}
 	}
 
 	public void registerClassForSupplementaryViewOfKindWithReuseIdentifier(Class<? extends CollectionReusableView> viewClass, String elementKind, String identifier) {
-		Assert.condition(viewClass != null, "View class must not be null");
 		Assert.condition(elementKind != null, "Element kind must not be null");
 		Assert.condition(identifier != null, "Identifier must not be null");
-		String kindAndIdentifier = String.format("%s/%s", elementKind, identifier);
-		this._supplementaryViewClassDict.put(kindAndIdentifier, viewClass);
+		String kindAndIdentifier = elementKind + "/" + identifier;
+
+		if(viewClass == null) {
+			this._supplementaryViewClassDict.remove(kindAndIdentifier);
+		} else {
+			this._supplementaryViewClassDict.put(kindAndIdentifier, viewClass);
+		}
 	}
 
 	public CollectionViewCell dequeueReusableCellWithReuseIdentifierForIndexPath(String identifier, IndexPath indexPath) {
 		// de-queue cell (if available)
 		List<CollectionViewCell> reusableCells = this._cellReuseQueues.get(identifier);
 		CollectionViewCell cell = Lists.last(reusableCells);
-		CollectionViewLayout.Attributes attributes = this._layout.layoutAttributesForItemAtIndexPath(indexPath);
+		CollectionViewLayoutAttributes attributes = this._layout.layoutAttributesForItemAtIndexPath(indexPath);
 
 		if (cell != null) {
 		    reusableCells.remove(reusableCells.size() - 1);
@@ -273,7 +274,7 @@ public class CollectionView extends ScrollView {
 	}
 
 	public CollectionReusableView dequeueReusableSupplementaryViewOfKindWithReuseIdentifierForIndexPath(String elementKind, String identifier, IndexPath indexPath) {
-		String kindAndIdentifier = String.format("%s/%s", elementKind, identifier);
+		String kindAndIdentifier = elementKind + "/" + identifier;
 		List<CollectionReusableView> reusableViews = _supplementaryViewReuseQueues.get(kindAndIdentifier);
 		CollectionReusableView view = Lists.last(reusableViews);
 
@@ -288,7 +289,7 @@ public class CollectionView extends ScrollView {
 
 			try {
 				if (this._layout != null) {
-					CollectionViewLayout.Attributes attributes = this._layout.layoutAttributesForSupplementaryViewOfKindAtIndexPath(elementKind, indexPath);
+					CollectionViewLayoutAttributes attributes = this._layout.layoutAttributesForSupplementaryViewOfKindAtIndexPath(elementKind, indexPath);
 					if (attributes != null) {
 						view = viewClass.getConstructor(Rect.class).newInstance(attributes.getFrame());
 					}
@@ -320,7 +321,7 @@ public class CollectionView extends ScrollView {
 		this.deselectItemAtIndexPathAnimatedNotifyDelegate(indexPath, animated, false);
 	}
 
-	void reloadData() {
+	public void reloadData() {
 		if (_reloadingSuspendedCount != 0) return;
 		this.hasLoadedData = true;
 		this.invalidateLayout();
@@ -369,7 +370,7 @@ public class CollectionView extends ScrollView {
 
 		    // originally the use method
 		    // _setNeedsVisibleCellsUpdate:withLayoutAttributes:
-		    // here with CellsUpdate set to true and LayoutAttributes parameter set to NO
+		    // here with CellsUpdate set to true and CollectionViewLayoutAttributes parameter set to NO
 		    // inside this method probably some flags are set and finally
 		    // setNeedsDisplay is called
 
@@ -419,7 +420,7 @@ public class CollectionView extends ScrollView {
 		    }
 
 		    if (centerItemIndexPath != null) {
-		        CollectionViewLayout.Attributes layoutAttributes = layout.layoutAttributesForItemAtIndexPath(centerItemIndexPath);
+		        CollectionViewLayoutAttributes layoutAttributes = layout.layoutAttributesForItemAtIndexPath(centerItemIndexPath);
 
 		        if (layoutAttributes != null) {
 		            mocha.graphics.Rect targetRect = this.makeRectToScrollPosition(layoutAttributes.getFrame(), SCROLL_POSITION_CENTERED_VERTICALLY | SCROLL_POSITION_CENTERED_HORIZONTALLY);
@@ -430,23 +431,23 @@ public class CollectionView extends ScrollView {
 
 			Rect oldBounds = this.getBounds();
 		    mocha.graphics.Rect newlyBounds = new mocha.graphics.Rect(targetOffset.x, targetOffset.y, oldBounds.size.width, oldBounds.height());
-		    List<CollectionViewLayout.Attributes> newlyVisibleLayoutAttrs = _collectionViewData.layoutAttributesForElementsInRect(newlyBounds);
+		    List<CollectionViewLayoutAttributes> newlyVisibleLayoutAttrs = _collectionViewData.layoutAttributesForElementsInRect(newlyBounds);
 
 		    final Map<CollectionViewItemKey,UpdateAnimation> layoutInterchangeData = new HashMap<>(newlyVisibleLayoutAttrs.size() + previouslyVisibleItemsKeysSet.size());
 
 		    final Set<CollectionViewItemKey> newlyVisibleItemsKeys = new HashSet<>();
 
-		    for (CollectionViewLayout.Attributes attr : newlyVisibleLayoutAttrs) {
+		    for (CollectionViewLayoutAttributes attr : newlyVisibleLayoutAttrs) {
 		        CollectionViewItemKey newKey = CollectionViewItemKey.collectionItemKeyForLayoutAttributes(attr);
 		        newlyVisibleItemsKeys.add(newKey);
 
-		        CollectionViewLayout.Attributes prevAttr = null;
-		        CollectionViewLayout.Attributes newAttr = null;
+		        CollectionViewLayoutAttributes prevAttr = null;
+		        CollectionViewLayoutAttributes newAttr = null;
 
-		        if (newKey.getType() == CollectionViewLayout.CollectionViewItemType.DECORATION_VIEW) {
+		        if (newKey.getType() == CollectionElementCategory.DECORATION_VIEW) {
 		            prevAttr = this._layout.layoutAttributesForDecorationViewOfKindAtIndexPath(attr.getRepresentedElementKind(), newKey.getIndexPath());
 		            newAttr = layout.layoutAttributesForDecorationViewOfKindAtIndexPath(attr.getRepresentedElementKind(), newKey.getIndexPath());
-		        } else if (newKey.getType() == CollectionViewLayout.CollectionViewItemType.CELL) {
+		        } else if (newKey.getType() == CollectionElementCategory.CELL) {
 		            prevAttr = this._layout.layoutAttributesForItemAtIndexPath(newKey.getIndexPath());
 		            newAttr = layout.layoutAttributesForItemAtIndexPath(newKey.getIndexPath());
 		        } else {
@@ -460,21 +461,21 @@ public class CollectionView extends ScrollView {
 		    }
 
 		    for (CollectionViewItemKey key : previouslyVisibleItemsKeysSet) {
-		        CollectionViewLayout.Attributes prevAttr = null;
-		        CollectionViewLayout.Attributes newAttr = null;
+		        CollectionViewLayoutAttributes prevAttr = null;
+		        CollectionViewLayoutAttributes newAttr = null;
 
-		        if (key.getType() == CollectionViewLayout.CollectionViewItemType.DECORATION_VIEW) {
+		        if (key.getType() == CollectionElementCategory.DECORATION_VIEW) {
 		            CollectionReusableView decorView = _allVisibleViewsDict.get(key);
 		            prevAttr = this._layout.layoutAttributesForDecorationViewOfKindAtIndexPath(decorView.getReuseIdentifier(), key.getIndexPath());
 		            newAttr = layout.layoutAttributesForDecorationViewOfKindAtIndexPath(decorView.getReuseIdentifier(), key.getIndexPath());
 		        }
 
-		        else if (key.getType() == CollectionViewLayout.CollectionViewItemType.CELL) {
+		        else if (key.getType() == CollectionElementCategory.CELL) {
 		            prevAttr = this._layout.layoutAttributesForItemAtIndexPath(key.getIndexPath());
 		            newAttr = layout.layoutAttributesForItemAtIndexPath(key.getIndexPath());
 		        }
 
-		        else if (key.getType() == CollectionViewLayout.CollectionViewItemType.SUPPLEMENTARY_VIEW) {
+		        else if (key.getType() == CollectionElementCategory.SUPPLEMENTARY_VIEW) {
 		            CollectionReusableView suuplView = _allVisibleViewsDict.get(key);
 		            prevAttr = this._layout.layoutAttributesForSupplementaryViewOfKindAtIndexPath(suuplView.getLayoutAttributes().getRepresentedElementKind(), key.getIndexPath());
 		            newAttr = layout.layoutAttributesForSupplementaryViewOfKindAtIndexPath(suuplView.getLayoutAttributes().getRepresentedElementKind(), key.getIndexPath());
@@ -484,7 +485,7 @@ public class CollectionView extends ScrollView {
 		    }
 
 		    for (CollectionViewItemKey key  : layoutInterchangeData.keySet()) {
-		        if (key.getType() == CollectionViewLayout.CollectionViewItemType.CELL) {
+		        if (key.getType() == CollectionElementCategory.CELL) {
 		            CollectionViewCell cell = (CollectionViewCell)_allVisibleViewsDict.get(key);
 
 		            if (cell == null) {
@@ -496,22 +497,22 @@ public class CollectionView extends ScrollView {
 					}
 		        }
 
-		        else if (key.getType() == CollectionViewLayout.CollectionViewItemType.SUPPLEMENTARY_VIEW) {
+		        else if (key.getType() == CollectionElementCategory.SUPPLEMENTARY_VIEW) {
 		            CollectionReusableView view = _allVisibleViewsDict.get(key);
 
 		            if (view == null) {
-		                CollectionViewLayout.Attributes attrs = layoutInterchangeData.get(key).previousLayoutInfos;
+		                CollectionViewLayoutAttributes attrs = layoutInterchangeData.get(key).previousLayoutInfos;
 		                view = this.createPreparedSupplementaryViewForElementOfKindAtIndexPathWithLayoutAttributes(attrs.getRepresentedElementKind(), attrs.getIndexPath(), attrs);
 		                _allVisibleViewsDict.put(key, view);
 		                this.addControlledSubview(view);
 		            }
 		        }
 
-		        else if (key.getType() == CollectionViewLayout.CollectionViewItemType.DECORATION_VIEW) {
+		        else if (key.getType() == CollectionElementCategory.DECORATION_VIEW) {
 		            CollectionReusableView view = this._allVisibleViewsDict.get(key);
 
 		            if (view == null) {
-		                CollectionViewLayout.Attributes attrs = layoutInterchangeData.get(key).previousLayoutInfos;
+		                CollectionViewLayoutAttributes attrs = layoutInterchangeData.get(key).previousLayoutInfos;
 		                view = this.dequeueReusableOrCreateDecorationViewOfKindForIndexPath(attrs.getRepresentedElementKind(), attrs.getIndexPath());
 		                this._allVisibleViewsDict.put(key, view);
 		                this.addControlledSubview(view);
@@ -539,13 +540,13 @@ public class CollectionView extends ScrollView {
 
 					for (CollectionViewItemKey key : _allVisibleViewsDict.keySet()) {
 						if (!newlyVisibleItemsKeys.contains(key)) {
-							if (key.getType() == CollectionViewLayout.CollectionViewItemType.CELL) {
+							if (key.getType() == CollectionElementCategory.CELL) {
 								reuseCell((CollectionViewCell)_allVisibleViewsDict.get(key));
 								toRemove.add(key);
-							} else if (key.getType() == CollectionViewLayout.CollectionViewItemType.SUPPLEMENTARY_VIEW) {
+							} else if (key.getType() == CollectionElementCategory.SUPPLEMENTARY_VIEW) {
 								reuseSupplementaryView(_allVisibleViewsDict.get(key));
 								toRemove.add(key);
-							} else if (key.getType() == CollectionViewLayout.CollectionViewItemType.DECORATION_VIEW) {
+							} else if (key.getType() == CollectionElementCategory.DECORATION_VIEW) {
 								reuseDecorationView(_allVisibleViewsDict.get(key));
 								toRemove.add(key);
 							}
@@ -594,16 +595,16 @@ public class CollectionView extends ScrollView {
 		return this._collectionViewData.numberOfItemsInSection(section);
 	}
 
-	public CollectionViewLayout.Attributes layoutAttributesForItemAtIndexPath(IndexPath indexPath) {
+	public CollectionViewLayoutAttributes layoutAttributesForItemAtIndexPath(IndexPath indexPath) {
 		return this._layout.layoutAttributesForItemAtIndexPath(indexPath);
 	}
 
-	public CollectionViewLayout.Attributes layoutAttributesForSupplementaryElementOfKindAtIndexPath(String kind, IndexPath indexPath) {
+	public CollectionViewLayoutAttributes layoutAttributesForSupplementaryElementOfKindAtIndexPath(String kind, IndexPath indexPath) {
 		return this._layout.layoutAttributesForSupplementaryViewOfKindAtIndexPath(kind, indexPath);
 	}
 
 	public IndexPath indexPathForItemAtPoint(mocha.graphics.Point point) {
-		CollectionViewLayout.Attributes attributes = Lists.last(this._layout.layoutAttributesForElementsInRect(new mocha.graphics.Rect(point.x, point.y, 1, 1)));
+		CollectionViewLayoutAttributes attributes = Lists.last(this._layout.layoutAttributesForElementsInRect(new mocha.graphics.Rect(point.x, point.y, 1, 1)));
 
 		if(attributes == null) {
 			return null;
@@ -616,7 +617,7 @@ public class CollectionView extends ScrollView {
 		for(Map.Entry<CollectionViewItemKey,CollectionReusableView> entry : this._allVisibleViewsDict.entrySet()) {
 			CollectionViewItemKey itemKey = entry.getKey();
 
-			if(itemKey.getType() == CollectionViewLayout.CollectionViewItemType.CELL) {
+			if(itemKey.getType() == CollectionElementCategory.CELL) {
 				CollectionReusableView reusableView = entry.getValue();
 
 				if(reusableView instanceof CollectionViewCell && reusableView == cell) {
@@ -635,7 +636,7 @@ public class CollectionView extends ScrollView {
 		for(Map.Entry<CollectionViewItemKey,CollectionReusableView> entry : this._allVisibleViewsDict.entrySet()) {
 			CollectionViewItemKey itemKey = entry.getKey();
 
-			if(itemKey.getType() == CollectionViewLayout.CollectionViewItemType.CELL) {
+			if(itemKey.getType() == CollectionElementCategory.CELL) {
 				if(itemKey.getIndexPath().equals(indexPath)) {
 					CollectionReusableView reusableView = entry.getValue();
 
@@ -683,7 +684,7 @@ public class CollectionView extends ScrollView {
 		// Ensure grid is laid out; else we can't scroll.
 		this.layoutSubviews();
 
-		CollectionViewLayout.Attributes layoutAttributes = this._layout.layoutAttributesForItemAtIndexPath(indexPath);
+		CollectionViewLayoutAttributes layoutAttributes = this._layout.layoutAttributesForItemAtIndexPath(indexPath);
 
 		if (layoutAttributes != null) {
 		    mocha.graphics.Rect targetRect = this.makeRectToScrollPosition(layoutAttributes.getFrame(), scrollPosition);
@@ -812,7 +813,7 @@ public class CollectionView extends ScrollView {
 
 		// do we need to update contentSize?
 		Size contentSize = _collectionViewData.collectionViewContentRect().size;
-		MLog("CV_TEST, CONTENT_SIZE: " + contentSize);
+		// MLog("CV_TEST, CONTENT_SIZE: " + contentSize);
 		if (!this.getContentSize().equals(contentSize)) {
 		    this.setContentSize(contentSize);
 
@@ -872,7 +873,7 @@ public class CollectionView extends ScrollView {
 		List<CollectionReusableView> reusableViews = _decorationViewReuseQueues.get(elementKind);
 		CollectionReusableView view = Lists.last(reusableViews);
 		CollectionViewLayout collectionViewLayout = this._layout;
-		CollectionViewLayout.Attributes attributes = collectionViewLayout.layoutAttributesForDecorationViewOfKindAtIndexPath(elementKind, indexPath);
+		CollectionViewLayoutAttributes attributes = collectionViewLayout.layoutAttributesForDecorationViewOfKindAtIndexPath(elementKind, indexPath);
 
 		if (view != null) {
 		    reusableViews.remove(reusableViews.size() - 1);
@@ -886,7 +887,7 @@ public class CollectionView extends ScrollView {
 
 			try {
 				if (attributes != null) {
-					view = viewClass.getConstructor(CollectionViewLayout.Attributes.class).newInstance(attributes.getFrame());
+					view = viewClass.getConstructor(CollectionViewLayoutAttributes.class).newInstance(attributes.getFrame());
 				} else{
 					view = viewClass.newInstance();
 				}
@@ -999,7 +1000,10 @@ public class CollectionView extends ScrollView {
 		        if (tempDeselectIndexPath != null && !tempDeselectIndexPath.equals(this._touchingIndexPath)) {
 		            // iOS6 mocha.ui.CollectionView deselects cell without notification
 		            CollectionViewCell selectedCell = this.cellForItemAtIndexPath(tempDeselectIndexPath);
-		            selectedCell.setSelected(false);
+
+					if(selectedCell != null) {
+		            	selectedCell.setSelected(false);
+					}
 		        }
 		    }
 		}
@@ -1107,7 +1111,10 @@ public class CollectionView extends ScrollView {
 
 		    if (shouldSelect) {
 		        CollectionViewCell selectedCell = this.cellForItemAtIndexPath(indexPath);
-		        selectedCell.setSelected(true);
+
+				if(selectedCell != null) {
+			        selectedCell.setSelected(true);
+				}
 
 		        _indexPathsForSelectedItems.add(indexPath);
 
@@ -1155,7 +1162,11 @@ public class CollectionView extends ScrollView {
 
 		if (shouldHighlight) {
 		    CollectionViewCell highlightedCell = this.cellForItemAtIndexPath(indexPath);
-		    highlightedCell.setHighlighted(true);
+
+			if(highlightedCell != null) {
+		    	highlightedCell.setHighlighted(true);
+			}
+
 		    _indexPathsForHighlightedItems.add(indexPath);
 
 		    if (scrollPosition != SCROLL_POSITION_NONE) {
@@ -1179,18 +1190,18 @@ public class CollectionView extends ScrollView {
 		    CollectionViewCell highlightedCell = this.cellForItemAtIndexPath(indexPath);
 
 		    // iOS6 does not notify any delegate if the cell was never highlighted (setHighlighted overwritten) during touchMoved
-		    if (check && !highlightedCell.isHighlighted()) {
+		    if (check && highlightedCell != null && !highlightedCell.isHighlighted()) {
 		        return false;
 		    }
 
 		    // if multiple selection or not unhighlighting a selected item we don't perform any op
-		    if (highlightedCell.isHighlighted() && _indexPathsForSelectedItems.contains(indexPath)) {
+		    if (highlightedCell != null && highlightedCell.isHighlighted() && this._indexPathsForSelectedItems.contains(indexPath)) {
 		        highlightedCell.setHighlighted(true);
-		    }else {
+		    } else if(highlightedCell != null) {
 		        highlightedCell.setHighlighted(false);
 		    }
 
-		    _indexPathsForHighlightedItems.remove(indexPath);
+		    this._indexPathsForHighlightedItems.remove(indexPath);
 
 		    if (notifyDelegate && _collectionViewFlags.delegateDidUnhighlightItemAtIndexPath) {
 		        this.getDelegate().collectionViewDidUnhighlightItemAtIndexPath(this, indexPath);
@@ -1273,8 +1284,8 @@ public class CollectionView extends ScrollView {
 	}
 
 	private void updateVisibleCellsNow(boolean now) {
-		List<CollectionViewLayout.Attributes> layoutAttributesArray = this._collectionViewData.layoutAttributesForElementsInRect(this.getBounds());
-		MWarn("CV_TEST updateVisibleCells " + layoutAttributesArray + ", " + this.getBounds());
+		List<CollectionViewLayoutAttributes> layoutAttributesArray = this._collectionViewData.layoutAttributesForElementsInRect(this.getBounds());
+		// MWarn("CV_TEST updateVisibleCells " + layoutAttributesArray + ", " + this.getBounds());
 
 		if (layoutAttributesArray == null || layoutAttributesArray.size() == 0) {
 		    // If our layout source isn't providing any layout information, we should just
@@ -1282,36 +1293,24 @@ public class CollectionView extends ScrollView {
 		    return;
 		}
 
+
 		// create ItemKey/Attributes dictionary
-		Map<CollectionViewItemKey,CollectionViewLayout.Attributes> itemsToAdd = new HashMap<>();
-
-		Map<CollectionViewItemKey,Boolean> testMap = new HashMap<>();
-		CollectionViewItemKey key1 = CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(IndexPath.withItemInSection(0, 0));
-		CollectionViewItemKey key2 = CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(IndexPath.withItemInSection(0, 0));
-		testMap.put(key1, true);
-		MLog("CV_TEST contains: %s (%s) | value: %s | equals: %s | %d %d", testMap.containsKey(key2), testMap.containsKey(key1), testMap.get(key2), key1.equals(key2), key1.hashCode(), key2.hashCode());
-
-		List<CollectionViewItemKey> sortedKeys = Lists.sortedList(_allVisibleViewsDict.keySet());
-		CollectionViewItemKey first = null;
-		for(CollectionViewItemKey key : sortedKeys) {
-			first = first == null ? key : first;
-			MLog("CV_TEST updateVisibleCells - VISIBLE KEY: " + key + ", " + _allVisibleViewsDict.get(key));
-		}
+		Map<CollectionViewItemKey,CollectionViewLayoutAttributes> itemsToAdd = new HashMap<>();
 
 		// Add new cells.
-		for (CollectionViewLayout.Attributes layoutAttributes : layoutAttributesArray) {
+		for (CollectionViewLayoutAttributes layoutAttributes : layoutAttributesArray) {
 		    CollectionViewItemKey itemKey = CollectionViewItemKey.collectionItemKeyForLayoutAttributes(layoutAttributes);
 		    itemsToAdd.put(itemKey, layoutAttributes);
 
 		    // check if cell is in visible dict; add it if not.
 		    CollectionReusableView view = _allVisibleViewsDict.get(itemKey);
 		    if (view == null) {
-				MLog("CV_TEST updateVisibleCells - NO REUSE KEY: " + itemKey + ", " + itemKey.equals(first));
-		        if (itemKey.getType() == CollectionViewLayout.CollectionViewItemType.CELL) {
+				MLog("CV_TEST updateVisibleCells - NO REUSE KEY: " + itemKey);// + ", " + itemKey.equals(first));
+		        if (itemKey.getType() == CollectionElementCategory.CELL) {
 		            view = this.createPreparedCellForItemAtIndexPathWithLayoutAttributes(itemKey.getIndexPath(), layoutAttributes);
-		        } else if (itemKey.getType() == CollectionViewLayout.CollectionViewItemType.SUPPLEMENTARY_VIEW) {
+		        } else if (itemKey.getType() == CollectionElementCategory.SUPPLEMENTARY_VIEW) {
 		            view = this.createPreparedSupplementaryViewForElementOfKindAtIndexPathWithLayoutAttributes(layoutAttributes.getRepresentedElementKind(), layoutAttributes.getIndexPath(), layoutAttributes);
-		        } else if (itemKey.getType() == CollectionViewLayout.CollectionViewItemType.DECORATION_VIEW) {
+		        } else if (itemKey.getType() == CollectionElementCategory.DECORATION_VIEW) {
 		            view = this.dequeueReusableOrCreateDecorationViewOfKindForIndexPath(layoutAttributes.getRepresentedElementKind(), layoutAttributes.getIndexPath());
 		        }
 
@@ -1326,27 +1325,28 @@ public class CollectionView extends ScrollView {
 		    } else {
 		        // just update cell
 		        view.applyLayoutAttributes(layoutAttributes);
-				MLog("CV_TEST updateVisibleCells - reusing: " + view + " for " + itemKey);
+
+				// MLog("CV_TEST updateVisibleCells - reusing: " + view + " for " + itemKey);
 		    }
 		}
 
 		// Detect what items should be removed and queued back.
 		Set<CollectionViewItemKey> itemKeysToRemove = new HashSet<>(_allVisibleViewsDict.keySet());
-		// itemKeysToRemove.removeAll(itemsToAdd.keySet());
+		itemKeysToRemove.removeAll(itemsToAdd.keySet());
 
-		for(CollectionViewItemKey key : itemsToAdd.keySet()) {
-			itemKeysToRemove.remove(key);
-			MLog("CV_TEST updateVisibleCells - REMOVING KEY: " + key);
-		}
+//		for(CollectionViewItemKey key : itemsToAdd.keySet()) {
+//			itemKeysToRemove.remove(key);
+//			MLog("CV_TEST updateVisibleCells - REMOVING KEY: " + key);
+//		}
 
-		List<CollectionViewItemKey> a = Lists.sortedList(itemsToAdd.keySet());
-		List<CollectionViewItemKey> b = Lists.sortedList(itemKeysToRemove);
-		MLog("CV_TEST updateVisibleCells - VISIBLE: " + a);
-		MLog("CV_TEST updateVisibleCells - REMOVING: " + b);
-
-		if(a.size() > 0 && b.size() > 0) {
-			MLog("CV_TEST updateVisibleCells - EQUALS: " + a.get(0).equals(b.get(0)));
-		}
+//		List<CollectionViewItemKey> a = Lists.sortedList(itemsToAdd.keySet());
+//		List<CollectionViewItemKey> b = Lists.sortedList(itemKeysToRemove);
+//		MLog("CV_TEST updateVisibleCells - VISIBLE: " + a);
+//		MLog("CV_TEST updateVisibleCells - REMOVING: " + b);
+//
+//		if(a.size() > 0 && b.size() > 0) {
+//			MLog("CV_TEST updateVisibleCells - EQUALS: " + a.get(0).equals(b.get(0)));
+//		}
 
 		// Finally remove views that have not been processed and prepare them for re-use.
 		for (CollectionViewItemKey itemKey : itemKeysToRemove) {
@@ -1356,7 +1356,7 @@ public class CollectionView extends ScrollView {
 		        reusableView.removeFromSuperview();
 		        _allVisibleViewsDict.remove(itemKey);
 
-		        if (itemKey.getType() == CollectionViewLayout.CollectionViewItemType.CELL) {
+		        if (itemKey.getType() == CollectionElementCategory.CELL) {
 		            if (this._delegate != null && this._collectionViewFlags.delegateDidEndDisplayingCell) {
 		                this._delegate.collectionViewDidEndDisplayingCellForItemAtIndexPath(this, (CollectionViewCell)reusableView, itemKey.getIndexPath());
 		            }
@@ -1364,7 +1364,7 @@ public class CollectionView extends ScrollView {
 		            this.reuseCell((CollectionViewCell)reusableView);
 		        }
 
-				else if (itemKey.getType() == CollectionViewLayout.CollectionViewItemType.SUPPLEMENTARY_VIEW) {
+				else if (itemKey.getType() == CollectionElementCategory.SUPPLEMENTARY_VIEW) {
 		            if (this._delegate != null && this._collectionViewFlags.delegateDidEndDisplayingSupplementaryView) {
 						this._delegate.collectionViewDidEndDisplayingSupplementaryViewForElementOfKindAtIndexPath(this, reusableView, itemKey.getIdentifier(), itemKey.getIndexPath());
 		            }
@@ -1372,14 +1372,14 @@ public class CollectionView extends ScrollView {
 		            this.reuseSupplementaryView(reusableView);
 		        }
 
-		        else if (itemKey.getType() == CollectionViewLayout.CollectionViewItemType.DECORATION_VIEW) {
+		        else if (itemKey.getType() == CollectionElementCategory.DECORATION_VIEW) {
 		            this.reuseDecorationView(reusableView);
 		        }
 		    }
 		}
 	}
 
-	private CollectionViewCell createPreparedCellForItemAtIndexPathWithLayoutAttributes(IndexPath indexPath, CollectionViewLayout.Attributes layoutAttributes) {
+	private CollectionViewCell createPreparedCellForItemAtIndexPathWithLayoutAttributes(IndexPath indexPath, CollectionViewLayoutAttributes layoutAttributes) {
 		CollectionViewCell cell = this._dataSource.collectionViewCellForItemAtIndexPath(this, indexPath);
 
 		// Apply attributes
@@ -1395,7 +1395,7 @@ public class CollectionView extends ScrollView {
 		return cell;
 	}
 
-	private CollectionReusableView createPreparedSupplementaryViewForElementOfKindAtIndexPathWithLayoutAttributes(String kind, IndexPath indexPath, CollectionViewLayout.Attributes layoutAttributes) {
+	private CollectionReusableView createPreparedSupplementaryViewForElementOfKindAtIndexPathWithLayoutAttributes(String kind, IndexPath indexPath, CollectionViewLayoutAttributes layoutAttributes) {
 		if (this._dataSource != null && this._collectionViewFlags.dataSourceViewForSupplementaryElement) {
 		    CollectionReusableView view = this._dataSource.collectionViewViewForSupplementaryElementOfKindAtIndexPath(this, kind, indexPath);
 		    view.applyLayoutAttributes(layoutAttributes);
@@ -1409,7 +1409,12 @@ public class CollectionView extends ScrollView {
 		Assert.condition(identifier != null && identifier.length() > 0, "Invalid identifier");
 
 		reusableView.removeFromSuperview();
+
+		CollectionViewLayoutAttributes layoutAttributes = reusableView.getLayoutAttributes();
 		reusableView.prepareForReuse();
+		reusableView.setLayoutAttributes(null);
+
+		this._layout.enqueueLayoutAttributes(layoutAttributes);
 
 		// enqueue cell
 		List<T> reuseableViews = queue.get(identifier);
@@ -1427,7 +1432,7 @@ public class CollectionView extends ScrollView {
 	}
 
 	private void reuseSupplementaryView(CollectionReusableView supplementaryView) {
-		String kindAndIdentifier = String.format("%s/%s", supplementaryView.getLayoutAttributes().getElementKind(), supplementaryView.getReuseIdentifier());
+		String kindAndIdentifier = String.format("%s/%s", supplementaryView.getLayoutAttributes().getRepresentedElementKind(), supplementaryView.getReuseIdentifier());
 		this.queueReusableViewInQueueWithIdentifier(supplementaryView, _supplementaryViewReuseQueues, kindAndIdentifier);
 	}
 
@@ -1536,10 +1541,10 @@ public class CollectionView extends ScrollView {
 		final List<UpdateAnimation> animations = new ArrayList<>();
 		Map<CollectionViewItemKey,CollectionReusableView> newAllVisibleView = new HashMap<>();
 
-		final Map<CollectionViewLayout.CollectionViewItemType,List<CollectionReusableView>> viewsToRemove = new HashMap<>();
-		viewsToRemove.put(CollectionViewLayout.CollectionViewItemType.CELL, new ArrayList<CollectionReusableView>());
-		viewsToRemove.put(CollectionViewLayout.CollectionViewItemType.DECORATION_VIEW, new ArrayList<CollectionReusableView>());
-		viewsToRemove.put(CollectionViewLayout.CollectionViewItemType.SUPPLEMENTARY_VIEW, new ArrayList<CollectionReusableView>());
+		final Map<CollectionElementCategory,List<CollectionReusableView>> viewsToRemove = new HashMap<>();
+		viewsToRemove.put(CollectionElementCategory.CELL, new ArrayList<CollectionReusableView>());
+		viewsToRemove.put(CollectionElementCategory.DECORATION_VIEW, new ArrayList<CollectionReusableView>());
+		viewsToRemove.put(CollectionElementCategory.SUPPLEMENTARY_VIEW, new ArrayList<CollectionReusableView>());
 
 		for (CollectionViewUpdateItem updateItem  : items) {
 		    if (updateItem.isSectionOperation() && updateItem.updateAction() != CollectionViewUpdateItem.CollectionUpdateAction.DELETE) continue;
@@ -1548,12 +1553,12 @@ public class CollectionView extends ScrollView {
 		        for (int i = 0; i < numberOfBeforeSection; i++) {
 		            IndexPath indexPath = IndexPath.withItemInSection(i, updateItem.indexPathBeforeUpdate().section);
 
-		            CollectionViewLayout.Attributes finalAttrs = _layout.finalLayoutAttributesForDisappearingItemAtIndexPath(indexPath);
+		            CollectionViewLayoutAttributes finalAttrs = _layout.finalLayoutAttributesForDisappearingItemAtIndexPath(indexPath);
 		            CollectionViewItemKey key = CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(indexPath);
 		            CollectionReusableView view = _allVisibleViewsDict.get(key);
 
 		            if (view != null) {
-		                CollectionViewLayout.Attributes startAttrs = view.getLayoutAttributes();
+		                CollectionViewLayoutAttributes startAttrs = view.getLayoutAttributes();
 
 		                if (finalAttrs == null) {
 		                    finalAttrs = startAttrs.copy();
@@ -1574,12 +1579,12 @@ public class CollectionView extends ScrollView {
 		    if (updateItem.updateAction() == CollectionViewUpdateItem.CollectionUpdateAction.DELETE) {
 		        IndexPath indexPath = updateItem.indexPathBeforeUpdate();
 
-		        CollectionViewLayout.Attributes finalAttrs = _layout.finalLayoutAttributesForDisappearingItemAtIndexPath(indexPath);
+		        CollectionViewLayoutAttributes finalAttrs = _layout.finalLayoutAttributesForDisappearingItemAtIndexPath(indexPath);
 		        CollectionViewItemKey key = CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(indexPath);
 		        CollectionReusableView view = _allVisibleViewsDict.get(key);
 
 		        if (view != null) {
-		            CollectionViewLayout.Attributes startAttrs = view.getLayoutAttributes();
+		            CollectionViewLayoutAttributes startAttrs = view.getLayoutAttributes();
 
 		            if (finalAttrs == null) {
 		                finalAttrs = startAttrs.copy();
@@ -1597,8 +1602,8 @@ public class CollectionView extends ScrollView {
 		    else if (updateItem.updateAction() == CollectionViewUpdateItem.CollectionUpdateAction.INSERT) {
 		        IndexPath indexPath = updateItem.indexPathAfterUpdate();
 		        CollectionViewItemKey key = CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(indexPath);
-		        CollectionViewLayout.Attributes startAttrs = _layout.initialLayoutAttributesForAppearingItemAtIndexPath(indexPath);
-		        CollectionViewLayout.Attributes finalAttrs = _layout.layoutAttributesForItemAtIndexPath(indexPath);
+		        CollectionViewLayoutAttributes startAttrs = _layout.initialLayoutAttributesForAppearingItemAtIndexPath(indexPath);
+		        CollectionViewLayoutAttributes finalAttrs = _layout.layoutAttributesForItemAtIndexPath(indexPath);
 
 		        mocha.graphics.Rect startRect = startAttrs.getFrame();
 		        mocha.graphics.Rect finalRect = finalAttrs.getFrame();
@@ -1626,8 +1631,8 @@ public class CollectionView extends ScrollView {
 		        CollectionViewItemKey keyAfter = CollectionViewItemKey.collectionItemKeyForCellWithIndexPath(indexPathAfter);
 		        CollectionReusableView view = _allVisibleViewsDict.get(keyBefore);
 
-		        CollectionViewLayout.Attributes startAttrs = null;
-		        CollectionViewLayout.Attributes finalAttrs = _layout.layoutAttributesForItemAtIndexPath(indexPathAfter);
+		        CollectionViewLayoutAttributes startAttrs = null;
+		        CollectionViewLayoutAttributes finalAttrs = _layout.layoutAttributesForItemAtIndexPath(indexPathAfter);
 
 		        if (view != null) {
 		            startAttrs = view.getLayoutAttributes();
@@ -1649,7 +1654,7 @@ public class CollectionView extends ScrollView {
 			CollectionViewItemKey key = entry.getKey();
 			CollectionReusableView view = entry.getValue();
 
-		    if (key.getType() == CollectionViewLayout.CollectionViewItemType.CELL) {
+		    if (key.getType() == CollectionElementCategory.CELL) {
 		        int oldGlobalIndex = _update.oldModel.globalIndexForItemAtIndexPath(key.getIndexPath());
 		        List<Integer> oldToNewIndexMap = _update.oldToNewIndexMap;
 
@@ -1663,20 +1668,48 @@ public class CollectionView extends ScrollView {
 		        mocha.foundation.IndexPath oldIndexPath = oldGlobalIndex == -1 ? null : _update.oldModel.indexPathForItemAtGlobalIndex(oldGlobalIndex);
 
 		        if (newIndexPath != null) {
-					CollectionViewLayout.Attributes startAttrs = _layout.initialLayoutAttributesForAppearingItemAtIndexPath(oldIndexPath);
-					CollectionViewLayout.Attributes finalAttrs = _layout.layoutAttributesForItemAtIndexPath(newIndexPath);
+					CollectionViewLayoutAttributes startAttrs = _layout.initialLayoutAttributesForAppearingItemAtIndexPath(oldIndexPath);
+					CollectionViewLayoutAttributes finalAttrs = _layout.layoutAttributesForItemAtIndexPath(newIndexPath);
 
-		            animations.add(new UpdateAnimation(view, startAttrs, finalAttrs));
+					if(startAttrs == null && finalAttrs == null) {
+						throw new IllegalArgumentException("Invalid start and final attributes.");
+					}
+
+					if(startAttrs == null) {
+						startAttrs = finalAttrs.copy();
+						startAttrs.setAlpha(0.0f);
+					}
+
+					if(finalAttrs == null) {
+						finalAttrs = startAttrs.copy();
+						finalAttrs.setAlpha(0.0f);
+					}
+
+					animations.add(new UpdateAnimation(view, startAttrs, finalAttrs));
 		            CollectionViewItemKey newKey = key.copy(newIndexPath);
 		            newAllVisibleView.put(newKey, view);
 		        }
 
-		    } else if (key.getType() == CollectionViewLayout.CollectionViewItemType.SUPPLEMENTARY_VIEW) {
-		        CollectionViewLayout.Attributes startAttrs = null;
-		        CollectionViewLayout.Attributes finalAttrs = null;
+		    } else if (key.getType() == CollectionElementCategory.SUPPLEMENTARY_VIEW) {
+		        CollectionViewLayoutAttributes startAttrs;
+		        CollectionViewLayoutAttributes finalAttrs ;
 
 		        startAttrs = view.getLayoutAttributes();
 		        finalAttrs = _layout.layoutAttributesForSupplementaryViewOfKindAtIndexPath(view.getLayoutAttributes().getRepresentedElementKind(), key.getIndexPath());
+
+				if(startAttrs == null && finalAttrs == null) {
+					throw new IllegalArgumentException("Invalid start and final attributes.");
+				}
+
+				if(startAttrs == null) {
+					startAttrs = finalAttrs.copy();
+					startAttrs.setAlpha(0.0f);
+				}
+
+				if(finalAttrs == null) {
+					finalAttrs = startAttrs.copy();
+					finalAttrs.setAlpha(0.0f);
+				}
 
 		        animations.add(new UpdateAnimation(view, startAttrs, finalAttrs));
 		        CollectionViewItemKey newKey = key.copy();
@@ -1685,13 +1718,13 @@ public class CollectionView extends ScrollView {
 		    }
 		}
 
-		List<CollectionViewLayout.Attributes> allNewlyVisibleItems = _layout.layoutAttributesForElementsInRect(this.getVisibleBoundRects());
+		List<CollectionViewLayoutAttributes> allNewlyVisibleItems = _layout.layoutAttributesForElementsInRect(this.getVisibleBoundRects());
 
-		for (CollectionViewLayout.Attributes attrs  : allNewlyVisibleItems) {
+		for (CollectionViewLayoutAttributes attrs  : allNewlyVisibleItems) {
 		    CollectionViewItemKey key = CollectionViewItemKey.collectionItemKeyForLayoutAttributes(attrs);
 
-		    if (key.getType() == CollectionViewLayout.CollectionViewItemType.CELL && !newAllVisibleView.keySet().contains(key)) {
-		        CollectionViewLayout.Attributes startAttrs = _layout.initialLayoutAttributesForAppearingItemAtIndexPath(attrs.getIndexPath());
+		    if (key.getType() == CollectionElementCategory.CELL && !newAllVisibleView.keySet().contains(key)) {
+		        CollectionViewLayoutAttributes startAttrs = _layout.initialLayoutAttributesForAppearingItemAtIndexPath(attrs.getIndexPath());
 
 		        CollectionReusableView view = this.createPreparedCellForItemAtIndexPathWithLayoutAttributes(attrs.getIndexPath(), startAttrs);
 		        this.addControlledSubview(view);
@@ -1701,7 +1734,8 @@ public class CollectionView extends ScrollView {
 		    }
 		}
 
-		_allVisibleViewsDict = newAllVisibleView;
+		_allVisibleViewsDict.clear();
+		_allVisibleViewsDict.putAll(newAllVisibleView);
 
 		for (UpdateAnimation animation : animations) {
 			animation.view.applyLayoutAttributes(animation.previousLayoutInfos);
@@ -1718,15 +1752,15 @@ public class CollectionView extends ScrollView {
 		}, new AnimationCompletion() {
 			public void animationCompletion(boolean finished) {
 				// Iterate through all the views that we are going to remove.
-				for(Map.Entry<CollectionViewLayout.CollectionViewItemType,List<CollectionReusableView>> entry : viewsToRemove.entrySet()) {
-					CollectionViewLayout.CollectionViewItemType type = entry.getKey();
+				for(Map.Entry<CollectionElementCategory,List<CollectionReusableView>> entry : viewsToRemove.entrySet()) {
+					CollectionElementCategory type = entry.getKey();
 
 					for (CollectionReusableView view  : entry.getValue()) {
-						if (type == CollectionViewLayout.CollectionViewItemType.CELL) {
+						if (type == CollectionElementCategory.CELL) {
 							reuseCell((CollectionViewCell)view);
-						} else if (type == CollectionViewLayout.CollectionViewItemType.SUPPLEMENTARY_VIEW) {
+						} else if (type == CollectionElementCategory.SUPPLEMENTARY_VIEW) {
 							reuseSupplementaryView(view);
-						} else if (type == CollectionViewLayout.CollectionViewItemType.DECORATION_VIEW) {
+						} else if (type == CollectionElementCategory.DECORATION_VIEW) {
 							reuseDecorationView(view);
 						}
 					}
@@ -2082,8 +2116,9 @@ public class CollectionView extends ScrollView {
 		for (int i = 0; i < newModelSize; i++) {
 		    List<Integer> section = newModel.get(i);
 
-		    for (int j = 0; j < section.size(); j++) {
-		        int newGlobalIndex = _collectionViewData.globalIndexForItemAtIndexPath(IndexPath.withItemInSection(j, i));
+			int sectionSize = section.size();
+		    for (int j = 0; j < sectionSize; j++) {
+		        int newGlobalIndex = _collectionViewData.globalIndexForItemInSection(j, i);
 
 		        if (section.get(j) != -1) {
 					oldToNewMap.set(section.get(j), newGlobalIndex);

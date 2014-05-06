@@ -1,28 +1,29 @@
 package mocha.ui.collectionview;
 
 import mocha.foundation.*;
+import mocha.foundation.Comparable;
 
-class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<CollectionViewItemKey>, mocha.foundation.Comparable<CollectionViewItemKey> {
+class CollectionViewItemKey extends MObject implements Copying<CollectionViewItemKey>, Comparable<CollectionViewItemKey> {
 	static final String ELEMENT_KIND_CELL = "ELEMENT_KIND_CELL";
 
-	private CollectionViewLayout.CollectionViewItemType type;
-	private mocha.foundation.IndexPath indexPath;
-	private String identifier;
+	private final CollectionElementCategory type;
+	private final mocha.foundation.IndexPath indexPath;
+	private final String identifier;
+	private int hashCode;
 
-	public static CollectionViewItemKey collectionItemKeyForLayoutAttributes(CollectionViewLayout.Attributes layoutAttributes) {
-		CollectionViewItemKey key = new CollectionViewItemKey();
-		key.indexPath = layoutAttributes.getIndexPath();
-		key.type = layoutAttributes.getRepresentedElementCategory();
-		key.identifier = layoutAttributes.getRepresentedElementKind();
-		return key;
+	public static CollectionViewItemKey collectionItemKeyForLayoutAttributes(CollectionViewLayoutAttributes layoutAttributes) {
+		return new CollectionViewItemKey(layoutAttributes.getRepresentedElementCategory(), layoutAttributes.getIndexPath(), layoutAttributes.getRepresentedElementKind());
 	}
 
 	public static CollectionViewItemKey collectionItemKeyForCellWithIndexPath(mocha.foundation.IndexPath indexPath) {
-		CollectionViewItemKey key = new CollectionViewItemKey();
-		key.indexPath = indexPath;
-		key.type = CollectionViewLayout.CollectionViewItemType.CELL;
-		key.identifier = ELEMENT_KIND_CELL;
-		return key;
+		return new CollectionViewItemKey(CollectionElementCategory.CELL, indexPath, ELEMENT_KIND_CELL);
+	}
+
+	private CollectionViewItemKey(CollectionElementCategory type, IndexPath indexPath, String identifier) {
+		this.type = type;
+		this.indexPath = indexPath;
+		this.identifier = identifier;
+		this.hashCode = ((this.indexPath.hashCode() + this.type.hashCode()) * 31) + this.identifier.hashCode();
 	}
 
 	protected String toStringExtra() {
@@ -30,7 +31,7 @@ class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<
 	}
 
 	public int hashCode() {
-		return ((this.indexPath.hashCode() + this.type.hashCode()) * 31) + this.identifier.hashCode();
+		return this.hashCode;
 	}
 
 	public boolean equals(Object other) {
@@ -58,29 +59,14 @@ class CollectionViewItemKey extends MObject implements mocha.foundation.Copying<
 	}
 
 	public CollectionViewItemKey copy() {
-		CollectionViewItemKey itemKey = new CollectionViewItemKey();
-
-		itemKey.indexPath = this.indexPath;
-		itemKey.type = this.type;
-		itemKey.identifier = this.identifier;
-
-		return itemKey;
+		return new CollectionViewItemKey(this.type, this.indexPath, this.identifier);
 	}
 
 	public CollectionViewItemKey copy(IndexPath newIndexPath) {
-		CollectionViewItemKey itemKey = new CollectionViewItemKey();
-
-		itemKey.indexPath = newIndexPath;
-		itemKey.type = this.type;
-		itemKey.identifier = this.identifier;
-
-		return itemKey;
+		return new CollectionViewItemKey(this.type, newIndexPath, this.identifier);
 	}
 
-	/* Setters & Getters */
-	/* ========================================== */
-
-	public CollectionViewLayout.CollectionViewItemType getType() {
+	public CollectionElementCategory getType() {
 		return this.type;
 	}
 

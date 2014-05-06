@@ -90,8 +90,9 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 		int rowIndex = 0;
 		GridLayoutRow row = null;
 
-		for(int itemIndex = 0; itemIndex <= this.itemsCount; itemIndex++) {
-			boolean finishCycle = itemIndex >= this.itemsCount;
+		int itemsCount = this.getItemsCount();
+		for(int itemIndex = 0; itemIndex <= itemsCount; itemIndex++) {
+			boolean finishCycle = itemIndex >= itemsCount;
 
 			// TODO: fast path could even remove row creation and just calculate on the fly
 			GridLayoutItem item = null;
@@ -104,7 +105,7 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 				itemSize = item == null ? this.itemSize : item.getItemFrame().size;
 			}
 
-			MWarn("CV_TEST COMPUTE_LAYOUT %s %s %s %s %s", this.fixedItemSize, this.itemSize, item, finishCycle, this.items.size());
+			MWarn("CV_TEST COMPUTE_LAYOUT %s %s %s %s %s %s %s", this.fixedItemSize, this.itemSize, item, finishCycle, itemIndex, itemsCount, this.items.size());
 			float itemDimension = this.layoutInfo.horizontal ? itemSize.height : itemSize.width;
 
 			// first item of each row does not add spacing
@@ -291,7 +292,7 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 	}
 
 	public int getItemsCount() {
-		return this.itemsCount;
+		return this.fixedItemSize ? this.itemsCount : this.items.size();
 	}
 
 	public void setItemsCount(int itemsCount) {

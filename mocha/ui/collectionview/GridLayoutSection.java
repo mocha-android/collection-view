@@ -1,6 +1,5 @@
 package mocha.ui.collectionview;
 
-import com.tvguidemobile.R;
 import mocha.foundation.Assert;
 import mocha.foundation.Copying;
 import mocha.foundation.MObject;

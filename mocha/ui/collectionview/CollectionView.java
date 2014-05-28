@@ -336,8 +336,11 @@ public class CollectionView extends ScrollView {
 
 		for (IndexPath indexPath : this._indexPathsForSelectedItems) {
 		    CollectionViewCell selectedCell = this.cellForItemAtIndexPath(indexPath);
-		    selectedCell.setSelected(false);
-		    selectedCell.setHighlighted(false);
+
+			if(selectedCell != null) {
+				selectedCell.setSelected(false);
+				selectedCell.setHighlighted(false);
+			}
 		}
 
 		this._indexPathsForSelectedItems.clear();

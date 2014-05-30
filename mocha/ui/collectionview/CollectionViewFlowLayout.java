@@ -322,7 +322,7 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 
 	void getSizingInfos() {
 		Assert.condition(_data.getSections().size() == 0, "Flow layout is already populated?");
-		MWarn("CV_TEST,  IN getSizingInfos(): " + this._itemSize + ", " + this._data.getSections().size());
+		// MWarn("CV_TEST,  IN getSizingInfos(): " + this._itemSize + ", " + this._data.getSections().size());
 
 		CollectionViewDelegateFlowLayout flowDataSource = null;
 		CollectionView collectionView = this.getCollectionView();
@@ -396,14 +396,14 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 			}
 		}
 
-		MWarn("CV_TEST, OUT getSizingInfos(): " + this._itemSize + ", " + this._data.getSections().size());
+		// MWarn("CV_TEST, OUT getSizingInfos(): " + this._itemSize + ", " + this._data.getSections().size());
 	}
 
 	void updateItemsLayout() {
 		Size contentSize = Size.zero();
 
 		int s = 0;
-		MLog("CV_TEST, updateItemsLayout " + _data.getSections().size());
+		// MLog("CV_TEST, updateItemsLayout " + _data.getSections().size());
 		for (GridLayoutSection section : _data.getSections()) {
 			section.computeLayout();
 
@@ -419,7 +419,7 @@ public class CollectionViewFlowLayout extends CollectionViewLayout {
 				contentSize.width = Math.max(contentSize.width, sectionFrame.size.width + section.getFrame().origin.x + section.getSectionMargins().left + section.getSectionMargins().right);
 			}
 			section.setFrame(sectionFrame);
-			MLog("CV_TEST, section: " + (s++) + ", frame: " + sectionFrame);
+			// MLog("CV_TEST, section: " + (s++) + ", frame: " + sectionFrame);
 		}
 
 		_data.setContentSize(contentSize);

@@ -62,7 +62,7 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 		if (this.valid) return;
 
 		Assert.condition(this.rows.size() == 0, "No rows shall be at this point.");
-		MLog("CV_TEST computeLayout: " + this.itemsCount + ", " + this.itemSize);
+		// MLog("CV_TEST computeLayout: " + this.itemsCount + ", " + this.itemSize);
 
 		// iterate over all items, turning them into rows.
 		mocha.graphics.Size sectionSize = mocha.graphics.Size.zero();
@@ -104,7 +104,7 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 				itemSize = item == null ? this.itemSize : item.getItemFrame().size;
 			}
 
-			MWarn("CV_TEST COMPUTE_LAYOUT %s %s %s %s %s %s %s", this.fixedItemSize, this.itemSize, item, finishCycle, itemIndex, itemsCount, this.items.size());
+			// MWarn("CV_TEST COMPUTE_LAYOUT %s %s %s %s %s %s %s", this.fixedItemSize, this.itemSize, item, finishCycle, itemIndex, itemsCount, this.items.size());
 			float itemDimension = this.layoutInfo.horizontal ? itemSize.height : itemSize.width;
 
 			// first item of each row does not add spacing
@@ -166,7 +166,7 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 				row.addItem(item);
 			}
 
-			MLog("CV_TEST, computeLayout, adding " + item + " to " + row);
+			// MLog("CV_TEST, computeLayout, adding " + item + " to " + row);
 
 			itemsByRowCount++;
 		}
@@ -283,10 +283,10 @@ class GridLayoutSection extends MObject implements Copying<GridLayoutSection> {
 	public void setItemSize(mocha.graphics.Size itemSize) {
 		if(itemSize != null) {
 			this.itemSize = itemSize.copy();
-			MWarn("CV_TEST, SET ITEM SIZE TO: " + itemSize);
+			// MWarn("CV_TEST, SET ITEM SIZE TO: " + itemSize);
 		} else {
 			this.itemSize = mocha.graphics.Size.zero();
-			MWarn("CV_TEST, SET ITEM SIZE TO: ZERO");
+			// MWarn("CV_TEST, SET ITEM SIZE TO: ZERO");
 		}
 	}
 

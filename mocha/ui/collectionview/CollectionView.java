@@ -250,7 +250,7 @@ public class CollectionView extends ScrollView {
 			Class<? extends CollectionViewCell> cellClass = this._cellClassDict.get(identifier);
 
 			if (cellClass == null) {
-				MWarn("CV_TEST Failed to dequeue %s on %s", identifier, this);
+				// MWarn("CV_TEST Failed to dequeue %s on %s", identifier, this);
 				throw new IllegalArgumentException(String.format("Class not registered for identifier %s %s", identifier, this._cellClassDict));
 			}
 
@@ -1075,7 +1075,10 @@ public class CollectionView extends ScrollView {
 		// there should be no notifications as this is a silent "turn everything back on"
 		for (mocha.foundation.IndexPath tempDeselectedIndexPath : _indexPathsForSelectedItems) {
 		    CollectionViewCell selectedCell = this.cellForItemAtIndexPath(tempDeselectedIndexPath);
-		    selectedCell.setSelected(true);
+
+			if(selectedCell != null) {
+				selectedCell.setSelected(true);
+			}
 		}
 	}
 
@@ -1308,7 +1311,7 @@ public class CollectionView extends ScrollView {
 		    // check if cell is in visible dict; add it if not.
 		    CollectionReusableView view = _allVisibleViewsDict.get(itemKey);
 		    if (view == null) {
-				MLog("CV_TEST updateVisibleCells - NO REUSE KEY: " + itemKey);// + ", " + itemKey.equals(first));
+				// MLog("CV_TEST updateVisibleCells - NO REUSE KEY: " + itemKey);// + ", " + itemKey.equals(first));
 		        if (itemKey.getType() == CollectionElementCategory.CELL) {
 		            view = this.createPreparedCellForItemAtIndexPathWithLayoutAttributes(itemKey.getIndexPath(), layoutAttributes);
 		        } else if (itemKey.getType() == CollectionElementCategory.SUPPLEMENTARY_VIEW) {

@@ -1020,6 +1020,8 @@ public class CollectionView extends ScrollView {
 		    mocha.graphics.Point touchPoint = touches.get(0).locationInView(this);
 		    IndexPath indexPath = this.indexPathForItemAtPoint(touchPoint);
 
+			if(this._currentIndexPath == null) return;
+
 		    // moving out of bounds
 		    if (
 					this._currentIndexPath.equals(this._touchingIndexPath) &&

@@ -8,7 +8,7 @@ import mocha.ui.View;
 
 import java.util.List;
 
-abstract public class CollectionViewController extends mocha.ui.ViewController implements CollectionView.Delegate, CollectionView.DataSource, CollectionViewFlowLayout.CollectionViewDelegateFlowLayout, FastFlowLayout.Delegate {
+abstract public class CollectionViewController extends mocha.ui.ViewController implements CollectionView.Delegate, CollectionView.DataSource, CollectionViewFlowLayout.Delegate {
 	private CollectionView collectionView;
 	private boolean clearsSelectionOnViewWillAppear;
 	private boolean appearsFirstTime;

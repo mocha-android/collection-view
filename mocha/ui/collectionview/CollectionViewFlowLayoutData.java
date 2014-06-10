@@ -16,16 +16,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-class FlowLayoutData extends MObject {
-	private FastFlowLayout flowLayout;
-	private FlowLayoutSection[] sections;
+class CollectionViewFlowLayoutData extends MObject {
+	private CollectionViewFlowLayout flowLayout;
+	private CollectionViewFlowLayoutSection[] sections;
 	private int numberOfItems;
 	private boolean vertical;
 	private int lastGetSectionsMiddleSection;
 
 	public Size contentSize = new Size();
 
-	public FlowLayoutData(FastFlowLayout flowLayout) {
+	public CollectionViewFlowLayoutData(CollectionViewFlowLayout flowLayout) {
 		this.flowLayout = flowLayout;
 	}
 
@@ -34,21 +34,21 @@ class FlowLayoutData extends MObject {
 		int numberOfSections = collectionView.numberOfSections();
 
 		if(numberOfSections == 0) {
-			this.sections = new FlowLayoutSection[0];
+			this.sections = new CollectionViewFlowLayoutSection[0];
 			return;
 		}
 
 		if(this.sections == null) {
-			this.sections = new FlowLayoutSection[numberOfSections];
+			this.sections = new CollectionViewFlowLayoutSection[numberOfSections];
 		} else if(this.sections.length != numberOfSections) {
 			this.sections = Arrays.copyOf(this.sections, numberOfSections);
 		}
 
 		CollectionView.Delegate delegate = collectionView.getDelegate();
-		FastFlowLayout.Delegate flowLayoutDelegate;
+		CollectionViewFlowLayout.Delegate flowLayoutDelegate;
 
-		if (delegate instanceof FastFlowLayout.Delegate) {
-			flowLayoutDelegate = (FastFlowLayout.Delegate)delegate;
+		if (delegate instanceof CollectionViewFlowLayout.Delegate) {
+			flowLayoutDelegate = (CollectionViewFlowLayout.Delegate)delegate;
 		} else {
 			flowLayoutDelegate = null;
 		}
@@ -57,16 +57,16 @@ class FlowLayoutData extends MObject {
 		bounds.origin.x = 0.0f;
 		bounds.origin.y = 0.0f;
 
-		this.vertical = this.flowLayout.scrollDirection == FastFlowLayout.ScrollDirection.VERTICAL;
+		this.vertical = this.flowLayout.scrollDirection == CollectionViewFlowLayout.ScrollDirection.VERTICAL;
 		this.numberOfItems = 0;
 
 		Point offset = Point.zero();
 
 		for(int i = 0; i < numberOfSections; i++) {
-			FlowLayoutSection section = this.sections[i];
+			CollectionViewFlowLayoutSection section = this.sections[i];
 
 			if(section == null) {
-				section = new FlowLayoutSection();
+				section = new CollectionViewFlowLayoutSection();
 				this.sections[i] = section;
 			}
 
@@ -135,11 +135,11 @@ class FlowLayoutData extends MObject {
 
 		List<CollectionViewLayoutAttributes> attributeses = new ArrayList<>();
 
-		for(FlowLayoutSection section : this.sections) {
+		for(CollectionViewFlowLayoutSection section : this.sections) {
 			if(!section.frame.intersects(rect)) continue;
 
 			if(section.headerSize > 0 && section.headerFrame.intersects(rect)) {
-				CollectionViewLayoutAttributes attributes = this.flowLayout.dequeueLayoutAttributesForSupplementaryViewOfKind(FastFlowLayout.ELEMENT_KIND_SECTION_HEADER, IndexPath.withItemInSection(0, section.index));
+				CollectionViewLayoutAttributes attributes = this.flowLayout.dequeueLayoutAttributesForSupplementaryViewOfKind(CollectionViewFlowLayout.ELEMENT_KIND_SECTION_HEADER, IndexPath.withItemInSection(0, section.index));
 				attributes.setFrame(section.headerFrame);
 				attributeses.add(attributes);
 			}
@@ -157,7 +157,7 @@ class FlowLayoutData extends MObject {
 			}
 
 			if(section.footerSize > 0 && section.footerFrame.intersects(rect)) {
-				CollectionViewLayoutAttributes attributes = this.flowLayout.dequeueLayoutAttributesForSupplementaryViewOfKind(FastFlowLayout.ELEMENT_KIND_SECTION_FOOTER, IndexPath.withItemInSection(0, section.index));
+				CollectionViewLayoutAttributes attributes = this.flowLayout.dequeueLayoutAttributesForSupplementaryViewOfKind(CollectionViewFlowLayout.ELEMENT_KIND_SECTION_FOOTER, IndexPath.withItemInSection(0, section.index));
 				attributes.setFrame(section.footerFrame);
 				attributeses.add(attributes);
 			}
@@ -173,16 +173,16 @@ class FlowLayoutData extends MObject {
 	}
 
 	public CollectionViewLayoutAttributes layoutAttributesForSupplementaryViewOfKindAtIndexPath(String kind, IndexPath indexPath) {
-		if(kind != null && kind.equals(FastFlowLayout.ELEMENT_KIND_SECTION_HEADER)) {
-			FlowLayoutSection section = this.sections[indexPath.section];
+		if(kind != null && kind.equals(CollectionViewFlowLayout.ELEMENT_KIND_SECTION_HEADER)) {
+			CollectionViewFlowLayoutSection section = this.sections[indexPath.section];
 
 			if(section.headerSize > 0) {
 				CollectionViewLayoutAttributes attributes = this.flowLayout.dequeueLayoutAttributesForSupplementaryViewOfKind(kind, indexPath);
 				attributes.setFrame(section.headerFrame);
 				return attributes;
 			}
-		} else if(kind != null && kind.equals(FastFlowLayout.ELEMENT_KIND_SECTION_FOOTER)) {
-			FlowLayoutSection section = this.sections[indexPath.section];
+		} else if(kind != null && kind.equals(CollectionViewFlowLayout.ELEMENT_KIND_SECTION_FOOTER)) {
+			CollectionViewFlowLayoutSection section = this.sections[indexPath.section];
 
 			if(section.footerSize > 0) {
 				CollectionViewLayoutAttributes attributes = this.flowLayout.dequeueLayoutAttributesForSupplementaryViewOfKind(kind, indexPath);
@@ -291,7 +291,7 @@ class FlowLayoutData extends MObject {
 		// TODO: Speed up with binary search
 
 		for(int i = 0; i < numberOfSections; i++) {
-			FlowLayoutSection section = this.sections[i];
+			CollectionViewFlowLayoutSection section = this.sections[i];
 
 			if(this.vertical) {
 				if (point.y <= section.frame.origin.y) {
@@ -305,7 +305,7 @@ class FlowLayoutData extends MObject {
 		}
 
 		if(numberOfSections > 0) {
-			FlowLayoutSection section = this.sections[numberOfSections - 1];
+			CollectionViewFlowLayoutSection section = this.sections[numberOfSections - 1];
 
 			if(this.vertical) {
 				if (point.y < section.frame.origin.y + section.frame.size.height) {

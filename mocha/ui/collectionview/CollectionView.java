@@ -1046,7 +1046,7 @@ public class CollectionView extends ScrollView {
 
 		    mocha.graphics.Point touchPoint = touches.get(0).locationInView(this);
 		    IndexPath indexPath = this.indexPathForItemAtPoint(touchPoint);
-		    if (indexPath.equals(this._touchingIndexPath)) {
+		    if (indexPath != null && indexPath.equals(this._touchingIndexPath)) {
 		        this.userSelectedItemAtIndexPath(indexPath);
 		    }
 		    else if (!this.getAllowsMultipleSelection()) {

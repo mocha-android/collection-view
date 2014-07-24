@@ -66,7 +66,6 @@ abstract public class CollectionViewLayout extends MObject implements Serializab
 		boolean wasReused = layoutAttributes != null;
 
 		if(!wasReused) {
-			// MLog("CV_DEBUG - CREATING ATTRIBUTES: " + reuseIdentifier);
 			try {
 				layoutAttributes = this.layoutAttributesClass.newInstance();
 			} catch (InstantiationException | IllegalAccessException e) {

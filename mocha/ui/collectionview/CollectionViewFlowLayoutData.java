@@ -115,8 +115,6 @@ class CollectionViewFlowLayoutData extends MObject {
 			section.reloadData(this.flowLayout, collectionView, bounds, flowLayoutDelegate, offset, i, this.vertical);
 			section.index = i;
 
-			MWarn("CV_DEBUG section: " + section);
-
 			if(this.vertical) {
 				offset.y = section.frame.maxY();
 			} else {

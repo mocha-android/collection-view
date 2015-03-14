@@ -679,6 +679,15 @@ public class CollectionView extends ScrollView {
 		return indexPaths;
 	}
 
+	public void scrollToItemAtIndexPathAtScrollPosition(IndexPath indexPath, ScrollPosition scrollPosition, boolean animated) {
+		this.scrollToItemAtIndexPathAtScrollPosition(indexPath, animated, scrollPosition);
+	}
+
+	public void scrollToItemAtIndexPathAtScrollPosition(IndexPath indexPath, Set<ScrollPosition> scrollPositions, boolean animated) {
+		ScrollPosition positions[] = scrollPositions.toArray(new ScrollPosition[scrollPositions.size()]);
+		this.scrollToItemAtIndexPathAtScrollPosition(indexPath, animated, positions);
+	}
+
 	public void scrollToItemAtIndexPathAtScrollPosition(IndexPath indexPath, boolean animated, ScrollPosition... scrollPosition) {
 		this.scrollToItemAtIndexPathAtScrollPositionAnimated(indexPath, ScrollPosition.mask(scrollPosition), animated);
 	}

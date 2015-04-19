@@ -186,7 +186,11 @@ class CollectionViewFlowLayoutSection extends MObject {
 
 	private float alignItems(boolean vertical, Rect bounds, int start, int end, ItemAlignment alignment) {
 		if(start == end) {
-			return this.itemFrames[start].size.height + this.minimumLineSpacing;
+			if(vertical) {
+				return this.itemFrames[start].size.height + this.minimumLineSpacing;
+			} else {
+				return this.itemFrames[start].size.width + this.minimumLineSpacing;
+			}
 		}
 
 		float max;
